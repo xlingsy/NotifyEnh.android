@@ -156,7 +156,7 @@ fun NotificationItem(
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = notification.packageName.split(".").last(),
+                        text = notification.packageName,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)

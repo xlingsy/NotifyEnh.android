@@ -16,6 +16,12 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE isEnabled = 1")
     suspend fun getEnabledTasks(): List<TaskEntity>
 
+    @Query("SELECT * FROM tasks")
+    suspend fun getAllTasksList(): List<TaskEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(tasks: List<TaskEntity>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(task: TaskEntity)
 
