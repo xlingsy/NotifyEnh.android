@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.notifyenh"
+    namespace = "com.dansheng.notifyenh"
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -13,7 +13,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.notifyenh"
+        applicationId = "com.dansheng.notifyenh"
         minSdk = 30
         targetSdk = 36
         versionCode = 1

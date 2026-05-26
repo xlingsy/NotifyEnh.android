@@ -1,4 +1,4 @@
-package com.example.notifyenh
+package com.dansheng.notifyenh
 
 import org.junit.Test
 

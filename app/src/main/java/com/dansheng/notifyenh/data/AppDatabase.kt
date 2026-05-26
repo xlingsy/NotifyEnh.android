@@ -1,4 +1,4 @@
-package com.example.notifyenh.data
+package com.dansheng.notifyenh.data
 
 import android.content.Context
 import androidx.room.Database

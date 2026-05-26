@@ -1,4 +1,4 @@
-package com.example.notifyenh
+package com.dansheng.notifyenh
 
 import android.content.ComponentName
 import android.content.Context
@@ -66,11 +66,11 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.example.notifyenh.data.AppDatabase
-import com.example.notifyenh.data.NotificationEntity
-import com.example.notifyenh.data.TaskEntity
-import com.example.notifyenh.service.NotifyEnhService
-import com.example.notifyenh.ui.theme.NotifyEnhTheme
+import com.dansheng.notifyenh.data.AppDatabase
+import com.dansheng.notifyenh.data.NotificationEntity
+import com.dansheng.notifyenh.data.TaskEntity
+import com.dansheng.notifyenh.service.NotifyEnhService
+import com.dansheng.notifyenh.ui.theme.NotifyEnhTheme
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date

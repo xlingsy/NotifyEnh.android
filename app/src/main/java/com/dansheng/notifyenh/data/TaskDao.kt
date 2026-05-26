@@ -1,4 +1,4 @@
-package com.example.notifyenh.data
+package com.dansheng.notifyenh.data
 
 import androidx.room.Dao
 import androidx.room.Delete
