@@ -10,5 +10,5 @@ interface NotificationDao {
     suspend fun insert(notification: NotificationEntity)
 
     @Query("SELECT * FROM notifications ORDER BY postTime DESC")
-    suspend fun getAllNotifications(): List<NotificationEntity>
+    fun getAllNotificationsFlow(): kotlinx.coroutines.flow.Flow<List<NotificationEntity>>
 }
