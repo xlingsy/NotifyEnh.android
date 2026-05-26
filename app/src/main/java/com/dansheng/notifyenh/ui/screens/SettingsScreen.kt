@@ -16,10 +16,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,17 +29,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.dansheng.notifyenh.data.AppDatabase
 import com.dansheng.notifyenh.data.TaskEntity
+import com.dansheng.notifyenh.data.prefs.ThemeMode
+import com.dansheng.notifyenh.data.prefs.ThemePreferences
 import com.dansheng.notifyenh.service.NotifyEnhService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -47,11 +49,13 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val database = remember { AppDatabase.getDatabase(context) }
-    
+    val themePreferences = remember { ThemePreferences(context) }
+
+    val themeMode by themePreferences.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
     var isPermissionGranted by remember { mutableStateOf(isNotificationServiceEnabled(context)) }
     var isServiceRunning by remember { mutableStateOf(NotifyEnhService.isServiceRunning) }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -154,6 +158,31 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         Text(
+            text = "显示设置",
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            color = MaterialTheme.colorScheme.primary
+        )
+
+        ThemeOption(
+            title = "跟随系统",
+            selected = themeMode == ThemeMode.SYSTEM,
+            onClick = { scope.launch { themePreferences.setThemeMode(ThemeMode.SYSTEM) } }
+        )
+        ThemeOption(
+            title = "浅色模式",
+            selected = themeMode == ThemeMode.LIGHT,
+            onClick = { scope.launch { themePreferences.setThemeMode(ThemeMode.LIGHT) } }
+        )
+        ThemeOption(
+            title = "深色模式",
+            selected = themeMode == ThemeMode.DARK,
+            onClick = { scope.launch { themePreferences.setThemeMode(ThemeMode.DARK) } }
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        Text(
             text = "备份与恢复",
             style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -163,17 +192,27 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         ListItem(
             headlineContent = { Text("导出任务") },
             supportingContent = { Text("将所有任务导出为 JSON 文件") },
-            modifier = Modifier.padding(horizontal = 8.dp).clickable {
-                exportLauncher.launch("notify_enh_tasks.json")
-            }
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .clickable {
+                    exportLauncher.launch("notify_enh_tasks.json")
+                }
         )
 
         ListItem(
             headlineContent = { Text("导入任务") },
             supportingContent = { Text("从 JSON 文件恢复任务") },
-            modifier = Modifier.padding(horizontal = 8.dp).clickable {
-                importLauncher.launch(arrayOf("application/json", "application/octet-stream", "*/*"))
-            }
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .clickable {
+                    importLauncher.launch(
+                        arrayOf(
+                            "application/json",
+                            "application/octet-stream",
+                            "*/*"
+                        )
+                    )
+                }
         )
     }
 }
@@ -193,6 +232,21 @@ fun isNotificationServiceEnabled(context: Context): Boolean {
         }
     }
     return false
+}
+
+@Composable
+fun ThemeOption(
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        trailingContent = {
+            RadioButton(selected = selected, onClick = null)
+        },
+        modifier = Modifier.clickable(onClick = onClick)
+    )
 }
 
 // 扩展属性，方便在 SettingsScreen 中使用 clickable
