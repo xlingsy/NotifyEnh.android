@@ -23,11 +23,17 @@ import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import com.example.notifyenh.ui.theme.NotifyEnhTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -91,16 +97,48 @@ fun NotifyEnhApp() {
 fun NotificationListScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val database = remember { AppDatabase.getDatabase(context) }
-    val notifications by database.notificationDao().getAllNotificationsFlow()
-        .collectAsState(initial = emptyList())
+    var searchQuery by rememberSaveable { mutableStateOf("") }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
-    ) {
-        items(notifications, key = { it.id }) { notification ->
-            NotificationItem(notification)
+    val notifications by remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            database.notificationDao().getAllNotificationsFlow()
+        } else {
+            database.notificationDao().searchNotifications(searchQuery)
+        }
+    }.collectAsState(initial = emptyList())
+
+    Column(modifier = modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            placeholder = { Text("搜索通知标题、内容或应用") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Clear, contentDescription = "清除")
+                    }
+                }
+            },
+            singleLine = true,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+        )
+
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                bottom = 16.dp
+            ),
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+        ) {
+            items(notifications, key = { it.id }) { notification ->
+                NotificationItem(notification)
+            }
         }
     }
 }
@@ -147,9 +185,9 @@ enum class AppDestinations(
     val label: String,
     val icon: Int,
 ) {
-    HOME("通知记录", R.drawable.ic_home),
-    Tasker("任务", R.drawable.ic_favorite),
-    PROFILE("配置", R.drawable.ic_account_box),
+    HOME("首页", R.drawable.ic_home),
+    Tasker("任务", R.drawable.ic_tasks),
+    PROFILE("配置", R.drawable.ic_settings),
 }
 
 @Composable
