@@ -87,26 +87,55 @@ class NotifyEnhService: NotificationListenerService(), TextToSpeech.OnInitListen
 
     private suspend fun processTasks(sbn: StatusBarNotification, title: String, content: String) {
         val enabledTasks = database.taskDao().getEnabledTasks()
-        val fullText = "$title $content"
         
         for (task in enabledTasks) {
-            if (isMatch(task, fullText, sbn.packageName)) {
+            if (isMatch(task, title, content, sbn.packageName)) {
                 handleAction(task, sbn, title, content)
             }
         }
     }
 
-    private fun isMatch(task: TaskEntity, text: String, sbnPackage: String): Boolean {
-        // 优先匹配包名
+    private fun isMatch(task: TaskEntity, title: String, content: String, sbnPackage: String): Boolean {
+        // 1. 优先匹配包名
         if (!task.packageName.isNullOrBlank() && task.packageName != sbnPackage) {
             return false
         }
 
-        return try {
-            if (task.isRegex) {
-                Regex(task.pattern, RegexOption.IGNORE_CASE).containsMatchIn(text)
+        // 2. 匹配标题 (如果设置了标题模式)
+        if (!task.titlePattern.isNullOrBlank()) {
+            if (!checkPattern(task.titlePattern, title, task.isRegex)) {
+                return false
+            }
+        }
+
+        // 3. 匹配内容 (如果设置了内容模式)
+        if (!task.contentPattern.isNullOrBlank()) {
+            if (!checkPattern(task.contentPattern, content, task.isRegex)) {
+                return false
+            }
+        }
+
+        // 4. 兼容逻辑：如果没有设置标题和内容模式，则使用旧的通用 pattern 匹配全文本
+        if (task.titlePattern.isNullOrBlank() && task.contentPattern.isNullOrBlank()) {
+            if (task.pattern.isNotBlank()) {
+                val fullText = "$title $content"
+                if (!checkPattern(task.pattern, fullText, task.isRegex)) {
+                    return false
+                }
             } else {
-                text.contains(task.pattern, ignoreCase = true)
+                return false
+            }
+        }
+        
+        return true
+    }
+
+    private fun checkPattern(pattern: String, text: String, isRegex: Boolean): Boolean {
+        return try {
+            if (isRegex) {
+                Regex(pattern, RegexOption.IGNORE_CASE).containsMatchIn(text)
+            } else {
+                text.contains(pattern, ignoreCase = true)
             }
         } catch (e: Exception) {
             false

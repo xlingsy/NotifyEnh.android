@@ -12,7 +12,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -131,6 +135,7 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val database = remember { AppDatabase.getDatabase(context) }
     var searchQuery by rememberSaveable { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
 
     val notifications by remember(searchQuery) {
         if (searchQuery.isBlank()) {
@@ -139,6 +144,8 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
             database.notificationDao().searchNotifications(searchQuery)
         }
     }.collectAsState(initial = emptyList())
+
+    var notificationToTask by remember { mutableStateOf<NotificationEntity?>(null) }
 
     Column(modifier = modifier.fillMaxSize()) {
         OutlinedTextField(
@@ -167,48 +174,115 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                 end = 16.dp,
                 bottom = 16.dp
             ),
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(notifications, key = { it.id }) { notification ->
-                NotificationItem(notification)
+                NotificationItem(
+                    notification = notification,
+                    onDelete = {
+                        scope.launch {
+                            database.notificationDao().delete(notification)
+                        }
+                    },
+                    onCreateTask = {
+                        notificationToTask = it
+                    }
+                )
             }
         }
     }
+
+    if (notificationToTask != null) {
+        val initialTask = remember(notificationToTask) {
+            TaskEntity(
+                name = notificationToTask?.title ?: "新任务",
+                packageName = notificationToTask?.packageName,
+                titlePattern = notificationToTask?.title ?: "",
+                contentPattern = notificationToTask?.content ?: "",
+                isRegex = false
+            )
+        }
+        TaskEditDialog(
+            task = initialTask,
+            onDismiss = { notificationToTask = null },
+            onConfirm = { newTask ->
+                scope.launch {
+                    database.taskDao().insert(newTask)
+                    notificationToTask = null
+                }
+            }
+        )
+    }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun NotificationItem(notification: NotificationEntity) {
+fun NotificationItem(
+    notification: NotificationEntity,
+    onDelete: () -> Unit,
+    onCreateTask: (NotificationEntity) -> Unit
+) {
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     val timeString = timeFormat.format(Date(notification.postTime))
+    var showMenu by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier.fillMaxSize(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    Box {
+        Card(
+            modifier = Modifier
+                .fillMaxSize()
+                .combinedClickable(
+                    onClick = { /* 可选：点击查看详情 */ },
+                    onLongClick = { showMenu = true }
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = notification.packageName.split(".").last(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = timeString,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
                 Text(
-                    text = notification.packageName.split(".").last(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.weight(1f)
+                    text = notification.title ?: "No Title",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(vertical = 4.dp)
                 )
                 Text(
-                    text = timeString,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary
+                    text = notification.content ?: "No Content",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
-            Text(
-                text = notification.title ?: "No Title",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(vertical = 4.dp)
+        }
+
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("创建任务") },
+                onClick = {
+                    showMenu = false
+                    onCreateTask(notification)
+                },
+                leadingIcon = { Icon(Icons.Default.Add, contentDescription = null) }
             )
-            Text(
-                text = notification.content ?: "No Content",
-                style = MaterialTheme.typography.bodyMedium
+            DropdownMenuItem(
+                text = { Text("删除记录") },
+                onClick = {
+                    showMenu = false
+                    onDelete()
+                },
+                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
             )
         }
     }
@@ -315,7 +389,13 @@ fun TaskItem(
                     )
                 }
                 Text(
-                    text = "${if (task.isRegex) "正则" else "关键词"}: ${task.pattern}",
+                    text = "${if (task.isRegex) "正则" else "关键词"}: ${
+                        listOfNotNull(
+                            task.titlePattern?.let { "标题($it)" },
+                            task.contentPattern?.let { "内容($it)" },
+                            task.pattern.takeIf { it.isNotBlank() }?.let { "通用($it)" }
+                        ).joinToString(" & ")
+                    }",
                     style = MaterialTheme.typography.bodySmall
                 )
                 Row(modifier = Modifier.padding(top = 4.dp)) {
@@ -354,6 +434,8 @@ fun TaskEditDialog(
 ) {
     var name by remember { mutableStateOf(task?.name ?: "") }
     var packageName by remember { mutableStateOf(task?.packageName ?: "") }
+    var titlePattern by remember { mutableStateOf(task?.titlePattern ?: "") }
+    var contentPattern by remember { mutableStateOf(task?.contentPattern ?: "") }
     var pattern by remember { mutableStateOf(task?.pattern ?: "") }
     var isRegex by remember { mutableStateOf(task?.isRegex ?: false) }
     var actionCancel by remember { mutableStateOf(task?.actionCancel ?: false) }
@@ -401,11 +483,28 @@ fun TaskEditDialog(
                 }
 
                 OutlinedTextField(
-                    value = pattern,
-                    onValueChange = { pattern = it },
-                    label = { Text(if (isRegex) "正则表达式" else "关键词") },
+                    value = titlePattern,
+                    onValueChange = { titlePattern = it },
+                    label = { Text("标题匹配模式 (可选)") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                OutlinedTextField(
+                    value = contentPattern,
+                    onValueChange = { contentPattern = it },
+                    label = { Text("内容匹配模式 (可选)") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (pattern.isNotBlank()) {
+                    OutlinedTextField(
+                        value = pattern,
+                        onValueChange = { pattern = it },
+                        label = { Text("通用匹配模式 (旧版)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = false
+                    )
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = isRegex, onCheckedChange = { isRegex = it })
                     Text("使用正则表达式")
@@ -429,6 +528,8 @@ fun TaskEditDialog(
                             id = task?.id ?: 0,
                             name = name,
                             packageName = if (packageName.isBlank()) null else packageName,
+                            titlePattern = if (titlePattern.isBlank()) null else titlePattern,
+                            contentPattern = if (contentPattern.isBlank()) null else contentPattern,
                             pattern = pattern,
                             isRegex = isRegex,
                             actionCancel = actionCancel,
@@ -437,7 +538,7 @@ fun TaskEditDialog(
                         )
                     )
                 },
-                enabled = name.isNotBlank() && pattern.isNotBlank()
+                enabled = name.isNotBlank() && (titlePattern.isNotBlank() || contentPattern.isNotBlank() || pattern.isNotBlank())
             ) {
                 Text("确定")
             }
