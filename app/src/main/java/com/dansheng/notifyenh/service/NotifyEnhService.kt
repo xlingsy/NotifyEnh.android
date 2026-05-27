@@ -18,6 +18,9 @@ import com.dansheng.notifyenh.data.prefs.AppPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -29,14 +32,14 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         private const val CHANNEL_ID = "notify_enh_service_channel"
         private const val NOTIFICATION_ID = 1001
 
-        var isServiceRunning = false
-            private set
+        private val _isServiceRunning = MutableStateFlow(false)
+        val isServiceRunning: StateFlow<Boolean> = _isServiceRunning.asStateFlow()
 
         private var instance: NotifyEnhService? = null
 
         fun stopService() {
             instance?.requestUnbind()
-            isServiceRunning = false
+            _isServiceRunning.value = false
         }
     }
 
@@ -48,7 +51,7 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
 
     override fun onListenerConnected() {
         super.onListenerConnected()
-        isServiceRunning = true
+        _isServiceRunning.value = true
         instance = this
         Log.d(TAG, "Service connected")
 
@@ -62,7 +65,7 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
-        isServiceRunning = false
+        _isServiceRunning.value = false
         instance = null
         Log.d(TAG, "Service disconnected")
     }
@@ -234,7 +237,7 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
 
     override fun onDestroy() {
         super.onDestroy()
-        isServiceRunning = false
+        _isServiceRunning.value = false
         instance = null
         tts?.stop()
         tts?.shutdown()

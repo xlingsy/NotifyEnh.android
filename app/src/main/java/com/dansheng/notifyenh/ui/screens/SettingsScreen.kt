@@ -59,7 +59,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     val persistentMode by appPreferences.persistentModeFlow.collectAsState(initial = false)
     val retentionDays by appPreferences.retentionDaysFlow.collectAsState(initial = 7)
     var isPermissionGranted by remember { mutableStateOf(isNotificationServiceEnabled(context)) }
-    var isServiceRunning by remember { mutableStateOf(NotifyEnhService.isServiceRunning) }
+    val isServiceRunning by NotifyEnhService.isServiceRunning.collectAsState()
     var isIgnoringBattery by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
 
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
@@ -67,7 +67,6 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
                 isPermissionGranted = isNotificationServiceEnabled(context)
-                isServiceRunning = NotifyEnhService.isServiceRunning
                 isIgnoringBattery = isIgnoringBatteryOptimizations(context)
             }
         }
@@ -158,10 +157,8 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                                     android.service.notification.NotificationListenerService.requestRebind(
                                         ComponentName(context, NotifyEnhService::class.java)
                                     )
-                                    isServiceRunning = NotifyEnhService.isServiceRunning
                                 } else {
                                     NotifyEnhService.stopService()
-                                    isServiceRunning = false
                                 }
                             }
                         }
