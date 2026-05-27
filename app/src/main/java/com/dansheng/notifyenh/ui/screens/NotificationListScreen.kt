@@ -1,17 +1,21 @@
 package com.dansheng.notifyenh.ui.screens
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
@@ -47,8 +51,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.combinedClickable
 
 @Composable
 fun NotificationListScreen(modifier: Modifier = Modifier) {
@@ -238,6 +240,16 @@ fun NotificationItem(
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
+                    if (notification.triggeredTaskId != null) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "已触发任务",
+                            modifier = Modifier
+                                .padding(end = 8.dp)
+                                .size(14.dp),
+                            tint = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
                     Text(
                         text = timeString,
                         style = MaterialTheme.typography.labelSmall,

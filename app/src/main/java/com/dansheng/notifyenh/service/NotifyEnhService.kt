@@ -15,13 +15,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-class NotifyEnhService: NotificationListenerService(), TextToSpeech.OnInitListener {
+class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListener {
 
     companion object {
         private const val TAG = "NotifyEnhService"
         var isServiceRunning = false
             private set
-        
+
         private var instance: NotifyEnhService? = null
 
         fun stopService() {
@@ -66,7 +66,7 @@ class NotifyEnhService: NotificationListenerService(), TextToSpeech.OnInitListen
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
-        
+
         // 过滤常驻通知（如媒体播放、系统常驻服务等）
         if (sbn.isOngoing) {
             return
@@ -81,20 +81,40 @@ class NotifyEnhService: NotificationListenerService(), TextToSpeech.OnInitListen
 
         // 存入数据库
         serviceScope.launch {
+            // 先处理任务以确定是否触发
+            val triggeredTask = findTriggeredTask(sbn, title, content)
+
             val entity = NotificationEntity(
                 packageName = pkg,
                 title = title,
                 content = content,
-                postTime = postTime
+                postTime = postTime,
+                triggeredTaskId = triggeredTask?.id
             )
             database.notificationDao().insert(entity)
-            
+
             // 清理旧通知
             cleanupOldNotifications()
 
-            // 处理任务
-            processTasks(sbn, title, content)
+            // 如果触发了任务，执行操作
+            triggeredTask?.let {
+                handleAction(it, sbn, title, content)
+            }
         }
+    }
+
+    private suspend fun findTriggeredTask(
+        sbn: StatusBarNotification,
+        title: String,
+        content: String
+    ): TaskEntity? {
+        val enabledTasks = database.taskDao().getEnabledTasksForPackage(sbn.packageName)
+        for (task in enabledTasks) {
+            if (isMatch(task, title, content)) {
+                return task
+            }
+        }
+        return null
     }
 
     private suspend fun cleanupOldNotifications() {
@@ -107,17 +127,7 @@ class NotifyEnhService: NotificationListenerService(), TextToSpeech.OnInitListen
         }
     }
 
-    private suspend fun processTasks(sbn: StatusBarNotification, title: String, content: String) {
-        val enabledTasks = database.taskDao().getEnabledTasksForPackage(sbn.packageName)
-        
-        for (task in enabledTasks) {
-            if (isMatch(task, title, content, sbn.packageName)) {
-                handleAction(task, sbn, title, content)
-            }
-        }
-    }
-
-    private fun isMatch(task: TaskEntity, title: String, content: String, sbnPackage: String): Boolean {
+    private fun isMatch(task: TaskEntity, title: String, content: String): Boolean {
         // 1. 如果标题和内容模式都为空，则认为不匹配（必须至少设置一个模式，或者包名匹配已经在外部过滤）
         // 实际上，如果包名匹配了，且没有设置任何模式，用户可能希望匹配该应用的所有通知。
         // 但根据之前的逻辑，至少要有一个匹配。
@@ -138,7 +148,7 @@ class NotifyEnhService: NotificationListenerService(), TextToSpeech.OnInitListen
                 return false
             }
         }
-        
+
         return true
     }
 
@@ -154,11 +164,16 @@ class NotifyEnhService: NotificationListenerService(), TextToSpeech.OnInitListen
         }
     }
 
-    private fun handleAction(task: TaskEntity, sbn: StatusBarNotification, title: String, content: String) {
+    private fun handleAction(
+        task: TaskEntity,
+        sbn: StatusBarNotification,
+        title: String,
+        content: String
+    ) {
         if (task.actionCancel) {
             cancelNotification(sbn.key)
         }
-        
+
         if (task.actionTts && isTtsInitialized) {
             val speechText = if (title.isNotBlank()) "$title: $content" else content
             tts?.speak(speechText, TextToSpeech.QUEUE_ADD, null, "notify_${sbn.postTime}")
