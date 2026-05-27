@@ -68,7 +68,7 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         super.onNotificationPosted(sbn)
 
         // 过滤常驻通知（如媒体播放、系统常驻服务等）
-        if (sbn.isOngoing) {
+        if (!sbn.isClearable) {
             return
         }
 
