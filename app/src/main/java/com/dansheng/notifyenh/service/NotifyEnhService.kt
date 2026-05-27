@@ -67,6 +67,11 @@ class NotifyEnhService: NotificationListenerService(), TextToSpeech.OnInitListen
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
         
+        // 过滤常驻通知（如媒体播放、系统常驻服务等）
+        if (sbn.isOngoing) {
+            return
+        }
+
         val pkg = sbn.packageName
         val notification = sbn.notification
         val extras = notification.extras

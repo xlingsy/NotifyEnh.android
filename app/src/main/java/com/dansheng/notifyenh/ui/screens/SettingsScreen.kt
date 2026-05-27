@@ -122,158 +122,160 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
 
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-    ) {
+    Column(modifier = modifier.fillMaxSize()) {
         Text(
             text = "设置",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(16.dp)
         )
 
-        ListItem(
-            headlineContent = { Text("通知监听服务") },
-            supportingContent = {
-                val statusText = when {
-                    !isPermissionGranted -> "服务未授权，点击去授权"
-                    isServiceRunning -> "服务正在运行"
-                    else -> "服务已授权但未启动，点击尝试启动"
-                }
-                Text(statusText)
-            },
-            trailingContent = {
-                Switch(
-                    checked = isPermissionGranted && isServiceRunning,
-                    onCheckedChange = { checked ->
-                        if (!isPermissionGranted) {
-                            context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                        } else {
-                            if (checked) {
-                                android.service.notification.NotificationListenerService.requestRebind(
-                                    ComponentName(context, NotifyEnhService::class.java)
-                                )
-                                isServiceRunning = NotifyEnhService.isServiceRunning
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+        ) {
+            ListItem(
+                headlineContent = { Text("通知监听服务") },
+                supportingContent = {
+                    val statusText = when {
+                        !isPermissionGranted -> "服务未授权，点击去授权"
+                        isServiceRunning -> "服务正在运行"
+                        else -> "服务已授权但未启动，点击尝试启动"
+                    }
+                    Text(statusText)
+                },
+                trailingContent = {
+                    Switch(
+                        checked = isPermissionGranted && isServiceRunning,
+                        onCheckedChange = { checked ->
+                            if (!isPermissionGranted) {
+                                context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
                             } else {
-                                NotifyEnhService.stopService()
-                                isServiceRunning = false
+                                if (checked) {
+                                    android.service.notification.NotificationListenerService.requestRebind(
+                                        ComponentName(context, NotifyEnhService::class.java)
+                                    )
+                                    isServiceRunning = NotifyEnhService.isServiceRunning
+                                } else {
+                                    NotifyEnhService.stopService()
+                                    isServiceRunning = false
+                                }
                             }
+                        }
+                    )
+                },
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            Text(
+                text = "显示设置",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            ThemeOption(
+                title = "跟随系统",
+                selected = themeMode == ThemeMode.SYSTEM,
+                onClick = { scope.launch { appPreferences.setThemeMode(ThemeMode.SYSTEM) } }
+            )
+            ThemeOption(
+                title = "浅色模式",
+                selected = themeMode == ThemeMode.LIGHT,
+                onClick = { scope.launch { appPreferences.setThemeMode(ThemeMode.LIGHT) } }
+            )
+            ThemeOption(
+                title = "深色模式",
+                selected = themeMode == ThemeMode.DARK,
+                onClick = { scope.launch { appPreferences.setThemeMode(ThemeMode.DARK) } }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            Text(
+                text = "存储设置",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            var showRetentionDialog by remember { mutableStateOf(false) }
+            ListItem(
+                headlineContent = { Text("记录保留时间") },
+                supportingContent = { Text("当前：${retentionDays}天") },
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .clickable { showRetentionDialog = true }
+            )
+
+            if (showRetentionDialog) {
+                val options = listOf(1, 3, 7, 30)
+                AlertDialog(
+                    onDismissRequest = { showRetentionDialog = false },
+                    title = { Text("选择保留时间") },
+                    text = {
+                        Column {
+                            options.forEach { days ->
+                                ListItem(
+                                    headlineContent = { Text("${days}天") },
+                                    trailingContent = {
+                                        RadioButton(selected = retentionDays == days, onClick = null)
+                                    },
+                                    modifier = Modifier.clickable {
+                                        scope.launch {
+                                            appPreferences.setRetentionDays(days)
+                                            showRetentionDialog = false
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showRetentionDialog = false }) {
+                            Text("关闭")
                         }
                     }
                 )
-            },
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
+            }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-        Text(
-            text = "显示设置",
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
+            Text(
+                text = "备份与恢复",
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.primary
+            )
 
-        ThemeOption(
-            title = "跟随系统",
-            selected = themeMode == ThemeMode.SYSTEM,
-            onClick = { scope.launch { appPreferences.setThemeMode(ThemeMode.SYSTEM) } }
-        )
-        ThemeOption(
-            title = "浅色模式",
-            selected = themeMode == ThemeMode.LIGHT,
-            onClick = { scope.launch { appPreferences.setThemeMode(ThemeMode.LIGHT) } }
-        )
-        ThemeOption(
-            title = "深色模式",
-            selected = themeMode == ThemeMode.DARK,
-            onClick = { scope.launch { appPreferences.setThemeMode(ThemeMode.DARK) } }
-        )
+            ListItem(
+                headlineContent = { Text("导出任务") },
+                supportingContent = { Text("将所有任务导出为 JSON 文件") },
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .clickable {
+                        exportLauncher.launch("notify_enh_tasks.json")
+                    }
+            )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-        Text(
-            text = "存储设置",
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        var showRetentionDialog by remember { mutableStateOf(false) }
-        ListItem(
-            headlineContent = { Text("记录保留时间") },
-            supportingContent = { Text("当前：${retentionDays}天") },
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .clickable { showRetentionDialog = true }
-        )
-
-        if (showRetentionDialog) {
-            val options = listOf(1, 3, 7, 30)
-            AlertDialog(
-                onDismissRequest = { showRetentionDialog = false },
-                title = { Text("选择保留时间") },
-                text = {
-                    Column {
-                        options.forEach { days ->
-                            ListItem(
-                                headlineContent = { Text("${days}天") },
-                                trailingContent = {
-                                    RadioButton(selected = retentionDays == days, onClick = null)
-                                },
-                                modifier = Modifier.clickable {
-                                    scope.launch {
-                                        appPreferences.setRetentionDays(days)
-                                        showRetentionDialog = false
-                                    }
-                                }
+            ListItem(
+                headlineContent = { Text("导入任务") },
+                supportingContent = { Text("从 JSON 文件恢复任务") },
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .clickable {
+                        importLauncher.launch(
+                            arrayOf(
+                                "application/json",
+                                "application/octet-stream",
+                                "*/*"
                             )
-                        }
+                        )
                     }
-                },
-                confirmButton = {
-                    TextButton(onClick = { showRetentionDialog = false }) {
-                        Text("关闭")
-                    }
-                }
             )
         }
-
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-        Text(
-            text = "备份与恢复",
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        ListItem(
-            headlineContent = { Text("导出任务") },
-            supportingContent = { Text("将所有任务导出为 JSON 文件") },
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .clickable {
-                    exportLauncher.launch("notify_enh_tasks.json")
-                }
-        )
-
-        ListItem(
-            headlineContent = { Text("导入任务") },
-            supportingContent = { Text("从 JSON 文件恢复任务") },
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .clickable {
-                    importLauncher.launch(
-                        arrayOf(
-                            "application/json",
-                            "application/octet-stream",
-                            "*/*"
-                        )
-                    )
-                }
-        )
     }
 }
 
