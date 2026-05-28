@@ -14,14 +14,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -31,6 +26,7 @@ import com.dansheng.notifyenh.ui.screens.NotificationListScreen
 import com.dansheng.notifyenh.ui.screens.SettingsScreen
 import com.dansheng.notifyenh.ui.screens.TaskerScreen
 import com.dansheng.notifyenh.ui.theme.NotifyEnhTheme
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,34 +45,25 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }
 
 @PreviewScreenSizes
 @Composable
 fun NotifyEnhApp() {
     val destinations = AppDestinations.entries
-    var currentDestination by remember { mutableStateOf(AppDestinations.HOME) }
     val pagerState = rememberPagerState(pageCount = { destinations.size })
-    val scope = rememberCoroutineScope()
+    val scope = rememberCoroutineScope() // 用于在点击事件中启动协程
 
-    // 当 Pager 页面滑动时，同步更新导航栏选中状态
-    LaunchedEffect(pagerState) {
-        snapshotFlow { pagerState.currentPage }.collect { page ->
-            currentDestination = destinations[page]
-        }
-    }
+    // 1. 直接通过当前 Pager 的页码计算出当前选中的导航目标，删除之前的 currentDestination 变量
+    val currentDestination = destinations[pagerState.currentPage]
 
-    // 当导航栏点击时，同步更新 Pager 页面
-    LaunchedEffect(currentDestination) {
-        val targetPage = destinations.indexOf(currentDestination)
-        if (pagerState.currentPage != targetPage) {
-            pagerState.animateScrollToPage(targetPage)
-        }
-    }
+    // 2. 彻底删除那两个互相监听的 LaunchedEffect 块，它们是导致卡顿的元凶
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
-            destinations.forEach {
+            destinations.forEach { it ->
+                val targetPage = destinations.indexOf(it)
                 item(
                     icon = {
                         Icon(
@@ -85,8 +72,17 @@ fun NotifyEnhApp() {
                         )
                     },
                     label = { Text(it.label) },
-                    selected = it == currentDestination,
-                    onClick = { currentDestination = it }
+                    selected = it == currentDestination, // 依然能正确高亮
+                    onClick = {
+                        // 3. 点击时直接异步触发滚动，不再污染中间状态
+                        scope.launch {
+                            // 如果你想带流畅动画，用 animateScrollToPage
+                            pagerState.animateScrollToPage(targetPage)
+
+                            // 提示：如果你发现跨多页动画依然不理想，可以直接用 scrollToPage（无动画秒切）
+                            // pagerState.scrollToPage(targetPage)
+                        }
+                    }
                 )
             }
         }
