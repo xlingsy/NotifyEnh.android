@@ -2,7 +2,9 @@ package com.dansheng.notifyenh.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.service.notification.NotificationListenerService
@@ -10,6 +12,7 @@ import android.service.notification.StatusBarNotification
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.dansheng.notifyenh.MainActivity
 import com.dansheng.notifyenh.R
 import com.dansheng.notifyenh.data.AppDatabase
 import com.dansheng.notifyenh.data.NotificationEntity
@@ -86,12 +89,24 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
 
     private fun startForegroundService() {
         createNotificationChannel()
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("NotifyEnh 正在运行")
             .setContentText("监听通知中...")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
+            .setContentIntent(pendingIntent)
             .build()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -106,17 +121,15 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "服务运行通知",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "确保应用在后台稳定运行"
-            }
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            "服务运行通知",
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "确保应用在后台稳定运行"
         }
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(channel)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -134,6 +147,10 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         val content = extras.getString(android.app.Notification.EXTRA_TEXT, "") ?: ""
         val postTime = sbn.postTime
 
+        if (title.isEmpty() && content.isEmpty()) {
+            return
+        }
+        
         // 存入数据库
         serviceScope.launch {
             // 先处理任务以确定是否触发
