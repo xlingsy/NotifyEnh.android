@@ -1,5 +1,6 @@
 package com.dansheng.notifyenh.ui.screens
 
+import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -34,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.dansheng.notifyenh.data.AppDatabase
@@ -47,7 +49,11 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+@SuppressLint("BatteryLife")
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -86,7 +92,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                 val json = Json.encodeToString(tasks)
                 try {
                     withContext(Dispatchers.IO) {
-                        context.contentResolver.openOutputStream(it)?.use { stream ->
+                        context.contentResolver.openOutputStream(it, "wt")?.use { stream ->
                             stream.write(json.toByteArray())
                         }
                     }
@@ -210,10 +216,10 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                             try {
                                 val intent =
                                     Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                                        data = Uri.parse("package:${context.packageName}")
+                                        data = "package:${context.packageName}".toUri()
                                     }
                                 context.startActivity(intent)
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 val intent =
                                     Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                                 context.startActivity(intent)
@@ -276,7 +282,10 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                                 ListItem(
                                     headlineContent = { Text("${days}天") },
                                     trailingContent = {
-                                        RadioButton(selected = retentionDays == days, onClick = null)
+                                        RadioButton(
+                                            selected = retentionDays == days,
+                                            onClick = null
+                                        )
                                     },
                                     modifier = Modifier.clickable {
                                         scope.launch {
@@ -311,7 +320,9 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .padding(horizontal = 8.dp)
                     .clickable {
-                        exportLauncher.launch("notify_enh_tasks.json")
+                        val timestamp = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
+                            .format(Date())
+                        exportLauncher.launch("notify_enh_tasks_$timestamp.json")
                     }
             )
 

@@ -218,15 +218,6 @@ fun TaskItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = task.name, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "${if (task.isRegex) "正则" else "关键词"}: ${
-                        listOfNotNull(
-                            task.titlePattern?.let { "标题($it)" },
-                            task.contentPattern?.let { "内容($it)" }
-                        ).joinToString(" & ")
-                    }",
-                    style = MaterialTheme.typography.bodySmall
-                )
                 Row(modifier = Modifier.padding(top = 4.dp)) {
                     if (task.actionCancel) {
                         Text(
@@ -327,18 +318,38 @@ fun TaskEditDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isRegex = !isRegex }
+                ) {
                     Checkbox(checked = isRegex, onCheckedChange = { isRegex = it })
                     Text("使用正则表达式")
                 }
                 Text("触发操作:", style = MaterialTheme.typography.labelLarge)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = actionCancel, onCheckedChange = { actionCancel = it })
-                    Text("取消通知")
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = actionTts, onCheckedChange = { actionTts = it })
-                    Text("TTS朗读")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { actionCancel = !actionCancel }
+                    ) {
+                        Checkbox(checked = actionCancel, onCheckedChange = { actionCancel = it })
+                        Text("取消通知")
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { actionTts = !actionTts }
+                    ) {
+                        Checkbox(checked = actionTts, onCheckedChange = { actionTts = it })
+                        Text("TTS朗读")
+                    }
                 }
             }
         },
@@ -371,6 +382,7 @@ fun TaskEditDialog(
         }
     )
 }
+
 
 @Composable
 fun AppPickerLoader(
