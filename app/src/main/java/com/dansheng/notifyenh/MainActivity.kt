@@ -7,16 +7,21 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
@@ -49,11 +54,29 @@ class MainActivity : ComponentActivity() {
 @PreviewScreenSizes
 @Composable
 fun NotifyEnhApp() {
-    var currentDestination by rememberSaveable { mutableStateOf(AppDestinations.HOME) }
+    val destinations = AppDestinations.entries
+    var currentDestination by remember { mutableStateOf(AppDestinations.HOME) }
+    val pagerState = rememberPagerState(pageCount = { destinations.size })
+    val scope = rememberCoroutineScope()
+
+    // 当 Pager 页面滑动时，同步更新导航栏选中状态
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect { page ->
+            currentDestination = destinations[page]
+        }
+    }
+
+    // 当导航栏点击时，同步更新 Pager 页面
+    LaunchedEffect(currentDestination) {
+        val targetPage = destinations.indexOf(currentDestination)
+        if (pagerState.currentPage != targetPage) {
+            pagerState.animateScrollToPage(targetPage)
+        }
+    }
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
-            AppDestinations.entries.forEach {
+            destinations.forEach {
                 item(
                     icon = {
                         Icon(
@@ -69,15 +92,17 @@ fun NotifyEnhApp() {
         }
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            when (currentDestination) {
-                AppDestinations.HOME -> {
-                    NotificationListScreen(modifier = Modifier.padding(innerPadding))
-                }
-                AppDestinations.Tasker -> {
-                    TaskerScreen(modifier = Modifier.padding(innerPadding))
-                }
-                AppDestinations.PROFILE -> {
-                    SettingsScreen(modifier = Modifier.padding(innerPadding))
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                beyondViewportPageCount = 1
+            ) { page ->
+                when (destinations[page]) {
+                    AppDestinations.HOME -> NotificationListScreen()
+                    AppDestinations.Tasker -> TaskerScreen()
+                    AppDestinations.PROFILE -> SettingsScreen()
                 }
             }
         }
