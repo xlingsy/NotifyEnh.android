@@ -4,7 +4,26 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- 现代、干净的多色调背景 -->
     <path
-        android:fillColor="#FFFFFF"
+        android:fillColor="#FDFDFF"
         android:pathData="M0,0h108v108h-108z" />
+
+    <!-- 几何色块：左下角柔和浅蓝 -->
+    <path
+        android:fillColor="#EBF3FF"
+        android:pathData="M0,108L60,108L0,48Z" />
+
+    <!-- 几何色块：右上角极淡紫色 -->
+    <path
+        android:fillColor="#F7F2FF"
+        android:pathData="M108,0L48,0L108,60Z" />
+
+    <!-- 核心装饰带：使用半透明的品牌色，增加动感和深度 -->
+    <path
+        android:fillColor="#0D3F51B5"
+        android:pathData="M20,108L108,20L108,40L40,108Z" />
+    <path
+        android:fillColor="#083F51B5"
+        android:pathData="M0,88L88,0L108,0L0,108Z" />
 </vector>
