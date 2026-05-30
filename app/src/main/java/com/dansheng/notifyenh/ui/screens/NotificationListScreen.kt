@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
@@ -85,12 +86,12 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.weight(1f),
-                placeholder = { 
+                placeholder = {
                     Text(
-                        stringResource(R.string.search_placeholder), 
-                        maxLines = 1, 
+                        stringResource(R.string.search_placeholder),
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
-                    ) 
+                    )
                 },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
@@ -164,6 +165,15 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                         },
                         onCreateTask = {
                             notificationToTask = it
+                        },
+                        onOpenApp = {
+                            val launchIntent =
+                                context.packageManager.getLaunchIntentForPackage(it.packageName)
+                            if (launchIntent != null) {
+                                context.startActivity(launchIntent)
+                            } else {
+                                // 提示无法打开
+                            }
                         }
                     )
                 }
@@ -225,7 +235,8 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
 fun NotificationItem(
     notification: NotificationEntity,
     onDelete: () -> Unit,
-    onCreateTask: (NotificationEntity) -> Unit
+    onCreateTask: (NotificationEntity) -> Unit,
+    onOpenApp: (NotificationEntity) -> Unit
 ) {
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     val timeString = timeFormat.format(Date(notification.postTime))
@@ -236,7 +247,9 @@ fun NotificationItem(
             modifier = Modifier
                 .fillMaxSize()
                 .combinedClickable(
-                    onClick = { /* 可选：点击查看详情 */ },
+                    onClick = {
+                        //onOpenApp(notification)
+                    },
                     onLongClick = { showMenu = true }
                 ),
             colors = CardDefaults.cardColors(
@@ -283,6 +296,19 @@ fun NotificationItem(
             expanded = showMenu,
             onDismissRequest = { showMenu = false }
         ) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.open_apk)) },
+                onClick = {
+                    showMenu = false
+                    onOpenApp(notification)
+                },
+                leadingIcon = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = null
+                    )
+                }
+            )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.create_task)) },
                 onClick = {

@@ -18,6 +18,7 @@
     <string name="confirm">Confirm</string>
     <string name="cancel">Cancel</string>
     <string name="task_triggered">Task triggered</string>
+    <string name="open_apk">Open apk</string>
     <string name="create_task">Create task</string>
     <string name="delete_record">Delete record</string>
     <string name="no_title">No Title</string>

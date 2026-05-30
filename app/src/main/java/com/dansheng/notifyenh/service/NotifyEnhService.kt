@@ -107,7 +107,7 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.fg_service_title))
             .setContentText(getString(R.string.fg_service_text))
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setContentIntent(pendingIntent)

@@ -13,6 +13,9 @@ interface NotificationDao {
     @Delete
     suspend fun delete(notification: NotificationEntity)
 
+    @Query("SELECT * FROM notifications WHERE id = :id")
+    suspend fun getNotificationById(id: Long): NotificationEntity?
+
     @Query("SELECT * FROM notifications ORDER BY postTime DESC")
     fun getAllNotificationsFlow(): kotlinx.coroutines.flow.Flow<List<NotificationEntity>>
 
