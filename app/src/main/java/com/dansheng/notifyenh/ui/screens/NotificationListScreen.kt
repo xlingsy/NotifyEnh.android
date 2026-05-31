@@ -81,7 +81,14 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
 
     val notifications = remember(searchQuery) {
-        Pager(PagingConfig(pageSize = 20)) {
+        Pager(
+            config = PagingConfig(
+                pageSize = 20,
+                prefetchDistance = 10,
+                enablePlaceholders = true,
+                initialLoadSize = 40
+            )
+        ) {
             if (searchQuery.isBlank()) {
                 database.notificationDao().getAllNotificationsPaging()
             } else {
@@ -247,7 +254,21 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
 
                             null -> {
                                 item(key = "placeholder_$index") {
-                                    // Empty or loading placeholder
+                                    // 触发加载该索引的数据
+                                    notifications[index]
+                                    // 显示占位占位符（类似骨架屏）
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp)
+                                            .size(height = 100.dp, width = 0.dp)
+                                            .drawWithContent {
+                                                drawRoundRect(
+                                                    color = Color.LightGray.copy(alpha = 0.3f),
+                                                    cornerRadius = CornerRadius(12.dp.toPx())
+                                                )
+                                            }
+                                    )
                                 }
                             }
                         }
