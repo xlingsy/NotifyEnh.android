@@ -1,5 +1,6 @@
 package com.dansheng.notifyenh.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -71,6 +73,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun NotificationListScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
@@ -201,60 +204,51 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                     ),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(
-                        count = notifications.itemCount,
-                        key = { index ->
-                            when (val item = notifications[index]) {
-                                is NotificationUiModel.Item -> item.notification.id
-                                is NotificationUiModel.Separator -> "sep_${item.date}"
-                                null -> index
-                            }
-                        }
-                    ) { index ->
-                        when (val item = notifications[index]) {
-                            is NotificationUiModel.Item -> {
-                                val notification = item.notification
-                                NotificationItem(
-                                    notification = notification,
-                                    onDelete = {
-                                        scope.launch {
-                                            database.notificationDao().delete(notification)
-                                        }
-                                    },
-                                    onCreateTask = {
-                                        notificationToTask = it
-                                    },
-                                    onOpenApp = {
-                                        val launchIntent =
-                                            context.packageManager.getLaunchIntentForPackage(it.packageName)
-                                        if (launchIntent != null) {
-                                            context.startActivity(launchIntent)
-                                        }
-                                    }
-                                )
-                            }
-
+                    val itemCount = notifications.itemCount
+                    for (index in 0 until itemCount) {
+                        val item = notifications.peek(index)
+                        when (item) {
                             is NotificationUiModel.Separator -> {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 16.dp, bottom = 8.dp)
-                                ) {
-                                    Text(
-                                        text = item.date,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.padding(start = 4.dp)
-                                    )
-                                    androidx.compose.material3.HorizontalDivider(
-                                        modifier = Modifier.padding(top = 4.dp),
-                                        thickness = 1.dp,
-                                        color = MaterialTheme.colorScheme.primaryContainer
-                                    )
+                                stickyHeader(key = "sep_${item.date}") {
+                                    DateHeader(item.date)
+                                }
+                            }
+                            is NotificationUiModel.Item -> {
+                                item(key = item.notification.id) {
+                                    // Trigger loading the actual item
+                                    val actualItem =
+                                        notifications[index] as? NotificationUiModel.Item
+                                    if (actualItem != null) {
+                                        NotificationItem(
+                                            notification = actualItem.notification,
+                                            onDelete = {
+                                                scope.launch {
+                                                    database.notificationDao()
+                                                        .delete(actualItem.notification)
+                                                }
+                                            },
+                                            onCreateTask = {
+                                                notificationToTask = it
+                                            },
+                                            onOpenApp = {
+                                                val launchIntent =
+                                                    context.packageManager.getLaunchIntentForPackage(
+                                                        it.packageName
+                                                    )
+                                                if (launchIntent != null) {
+                                                    context.startActivity(launchIntent)
+                                                }
+                                            }
+                                        )
+                                    }
                                 }
                             }
 
-                            null -> {}
+                            null -> {
+                                item(key = "placeholder_$index") {
+                                    // Empty or loading placeholder
+                                }
+                            }
                         }
                     }
                 }
@@ -334,6 +328,32 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                 }
             }
         )
+    }
+}
+
+@Composable
+fun DateHeader(date: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 16.dp, bottom = 8.dp)
+        ) {
+            Text(
+                text = date,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+            androidx.compose.material3.HorizontalDivider(
+                modifier = Modifier.padding(top = 4.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.primaryContainer
+            )
+        }
     }
 }
 
