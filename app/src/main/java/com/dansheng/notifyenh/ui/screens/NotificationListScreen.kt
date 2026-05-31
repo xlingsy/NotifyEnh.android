@@ -57,12 +57,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.itemKey
+import androidx.paging.insertSeparators
+import androidx.paging.map
 import com.dansheng.notifyenh.R
 import com.dansheng.notifyenh.data.AppDatabase
 import com.dansheng.notifyenh.data.NotificationEntity
 import com.dansheng.notifyenh.data.TaskEntity
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -82,7 +85,32 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
             } else {
                 database.notificationDao().searchNotificationsPaging(searchQuery)
             }
-        }.flow
+        }.flow.map { pagingData: PagingData<NotificationEntity> ->
+            pagingData.map { NotificationUiModel.Item(it) as NotificationUiModel }
+                .insertSeparators { before: NotificationUiModel?, after: NotificationUiModel? ->
+                    val beforeItem = before as? NotificationUiModel.Item
+                    val afterItem = after as? NotificationUiModel.Item
+
+                    val beforeDate = beforeItem?.let {
+                        SimpleDateFormat(
+                            "yyyy-MM-dd",
+                            Locale.getDefault()
+                        ).format(Date(it.notification.postTime))
+                    }
+                    val afterDate = afterItem?.let {
+                        SimpleDateFormat(
+                            "yyyy-MM-dd",
+                            Locale.getDefault()
+                        ).format(Date(it.notification.postTime))
+                    }
+
+                    if (afterDate != null && beforeDate != afterDate) {
+                        NotificationUiModel.Separator(afterDate)
+                    } else {
+                        null
+                    }
+                }
+        }
     }.collectAsLazyPagingItems()
 
     val listState = rememberLazyListState()
@@ -175,30 +203,58 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                 ) {
                     items(
                         count = notifications.itemCount,
-                        key = notifications.itemKey { it.id }
+                        key = { index ->
+                            when (val item = notifications[index]) {
+                                is NotificationUiModel.Item -> item.notification.id
+                                is NotificationUiModel.Separator -> "sep_${item.date}"
+                                null -> index
+                            }
+                        }
                     ) { index ->
-                        val notification = notifications[index]
-                        if (notification != null) {
-                            NotificationItem(
-                                notification = notification,
-                                onDelete = {
-                                    scope.launch {
-                                        database.notificationDao().delete(notification)
+                        when (val item = notifications[index]) {
+                            is NotificationUiModel.Item -> {
+                                val notification = item.notification
+                                NotificationItem(
+                                    notification = notification,
+                                    onDelete = {
+                                        scope.launch {
+                                            database.notificationDao().delete(notification)
+                                        }
+                                    },
+                                    onCreateTask = {
+                                        notificationToTask = it
+                                    },
+                                    onOpenApp = {
+                                        val launchIntent =
+                                            context.packageManager.getLaunchIntentForPackage(it.packageName)
+                                        if (launchIntent != null) {
+                                            context.startActivity(launchIntent)
+                                        }
                                     }
-                                },
-                                onCreateTask = {
-                                    notificationToTask = it
-                                },
-                                onOpenApp = {
-                                    val launchIntent =
-                                        context.packageManager.getLaunchIntentForPackage(it.packageName)
-                                    if (launchIntent != null) {
-                                        context.startActivity(launchIntent)
-                                    } else {
-                                        // 提示无法打开
-                                    }
+                                )
+                            }
+
+                            is NotificationUiModel.Separator -> {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp, bottom = 8.dp)
+                                ) {
+                                    Text(
+                                        text = item.date,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(start = 4.dp)
+                                    )
+                                    androidx.compose.material3.HorizontalDivider(
+                                        modifier = Modifier.padding(top = 4.dp),
+                                        thickness = 1.dp,
+                                        color = MaterialTheme.colorScheme.primaryContainer
+                                    )
                                 }
-                            )
+                            }
+
+                            null -> {}
                         }
                     }
                 }
@@ -378,6 +434,11 @@ fun NotificationItem(
             )
         }
     }
+}
+
+sealed class NotificationUiModel {
+    data class Item(val notification: NotificationEntity) : NotificationUiModel()
+    data class Separator(val date: String) : NotificationUiModel()
 }
 
 fun Modifier.scrollbar(
