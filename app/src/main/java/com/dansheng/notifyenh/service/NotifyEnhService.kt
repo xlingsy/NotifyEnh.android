@@ -1,7 +1,6 @@
 package com.dansheng.notifyenh.service
 
 import android.annotation.SuppressLint
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.ComponentName
@@ -24,6 +23,8 @@ import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
+import com.dansheng.notifyenh.App.Companion.ALARM_CHANNEL_ID
+import com.dansheng.notifyenh.App.Companion.CHANNEL_ID
 import com.dansheng.notifyenh.MainActivity
 import com.dansheng.notifyenh.R
 import com.dansheng.notifyenh.data.AppDatabase
@@ -44,8 +45,6 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
 
     companion object {
         private const val TAG = "NotifyEnhService"
-        private const val CHANNEL_ID = "notify_enh_service_channel"
-        private const val ALARM_CHANNEL_ID = "notify_enh_alarm_channel"
         private const val NOTIFICATION_ID = 1001
         private const val ALARM_NOTIFICATION_ID = 1002
 
@@ -165,8 +164,6 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
     }
 
     private fun startForegroundService() {
-        createNotificationChannel()
-
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -195,31 +192,6 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         } else {
             startForeground(NOTIFICATION_ID, notification)
         }
-    }
-
-    private fun createNotificationChannel() {
-        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(R.string.fg_channel_name),
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = getString(R.string.fg_channel_desc)
-        }
-        manager.createNotificationChannel(channel)
-
-        // Using a different ID for alarm channel to ensure it's recreated with correct importance
-        val alarmChannel = NotificationChannel(
-            ALARM_CHANNEL_ID + "_v2",
-            getString(R.string.action_alarm),
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            setSound(null, null) 
-            enableVibration(true)
-            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
-        }
-        manager.createNotificationChannel(alarmChannel)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
