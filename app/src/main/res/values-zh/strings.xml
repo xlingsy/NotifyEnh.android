@@ -81,6 +81,9 @@
     <string name="export_tasks_desc">将所有任务导出为 JSON 文件</string>
     <string name="import_tasks">导入任务</string>
     <string name="import_tasks_desc">从 JSON 文件恢复任务</string>
+    <string name="restore_auto_backup">从自动备份恢复</string>
+    <string name="restore_auto_backup_desc">从最近一次自动生成的备份中恢复任务</string>
+    <string name="no_auto_backup_found">未找到自动备份文件</string>
     <string name="export_success">导出成功</string>
     <string name="export_failed">导出失败：%1$s</string>
     <string name="import_completed">导入完成</string>

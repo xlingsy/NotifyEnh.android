@@ -81,6 +81,9 @@
     <string name="export_tasks_desc">Export all tasks as a JSON file</string>
     <string name="import_tasks">Import Tasks</string>
     <string name="import_tasks_desc">Restore tasks from a JSON file</string>
+    <string name="restore_auto_backup">Restore from Auto Backup</string>
+    <string name="restore_auto_backup_desc">Restore tasks from the latest automatic backup</string>
+    <string name="no_auto_backup_found">No automatic backup file found</string>
     <string name="export_success">Export successful</string>
     <string name="export_failed">Export failed: %1$s</string>
     <string name="import_completed">Import completed</string>

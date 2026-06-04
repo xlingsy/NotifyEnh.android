@@ -46,6 +46,7 @@ import com.dansheng.notifyenh.data.prefs.AppPreferences
 import com.dansheng.notifyenh.data.prefs.ThemeMode
 import com.dansheng.notifyenh.service.NotifyEnhService
 import com.dansheng.notifyenh.ui.components.ChangelogDialog
+import com.dansheng.notifyenh.util.BackupUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -425,6 +426,28 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                                 "*/*"
                             )
                         )
+                    }
+            )
+
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.restore_auto_backup)) },
+                supportingContent = { Text(stringResource(R.string.restore_auto_backup_desc)) },
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .clickable {
+                        scope.launch {
+                            val success = BackupUtils.restoreFromAutoBackup(context)
+                            if (success) {
+                                Toast.makeText(context, importCompletedMsg, Toast.LENGTH_SHORT)
+                                    .show()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.no_auto_backup_found),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     }
             )
 

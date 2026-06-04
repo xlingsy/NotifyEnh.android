@@ -61,6 +61,7 @@ import androidx.core.net.toUri
 import com.dansheng.notifyenh.R
 import com.dansheng.notifyenh.data.AppDatabase
 import com.dansheng.notifyenh.data.TaskEntity
+import com.dansheng.notifyenh.util.BackupUtils
 import kotlinx.coroutines.launch
 
 @Composable
@@ -180,11 +181,13 @@ fun TaskerScreen(modifier: Modifier = Modifier) {
                                 onToggle = { enabled ->
                                     scope.launch {
                                         database.taskDao().update(task.copy(isEnabled = enabled))
+                                        BackupUtils.autoBackup(context)
                                     }
                                 },
                                 onDelete = {
                                     scope.launch {
                                         database.taskDao().delete(task)
+                                        BackupUtils.autoBackup(context)
                                     }
                                 }
                             )
@@ -209,6 +212,7 @@ fun TaskerScreen(modifier: Modifier = Modifier) {
                     } else {
                         database.taskDao().insert(newTask)
                     }
+                    BackupUtils.autoBackup(context)
                     showAddDialog = false
                     taskToEdit = null
                 }
