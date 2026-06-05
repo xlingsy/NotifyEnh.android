@@ -165,19 +165,21 @@ object AlarmUtils {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val notification = NotificationCompat.Builder(App.instance, ALARM_CHANNEL_ID + "_v2")
+        val notification = NotificationCompat.Builder(App.instance, ALARM_CHANNEL_ID)
             .setContentTitle(App.instance.getString(R.string.action_alarm))
             .setContentText(App.instance.getString(R.string.alarm_active, taskName))
             .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)
+            .setAutoCancel(false)
             .setFullScreenIntent(fullScreenPendingIntent, true)
             .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
                 App.instance.getString(R.string.stop_alarm),
                 stopPendingIntent
             )
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
         val manager = App.instance.getSystemService(NotificationManager::class.java)

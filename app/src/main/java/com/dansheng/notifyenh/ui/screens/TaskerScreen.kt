@@ -489,7 +489,10 @@ fun TaskEditDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                if (!actionAlarm && !isPostNotificationsPermissionGranted(context)) {
+                                if (!actionAlarm && (!isPostNotificationsPermissionGranted(context) || !isFullScreenIntentPermissionGranted(
+                                        context
+                                    ))
+                                ) {
                                     showPermissionDialog = true
                                 } else {
                                     actionAlarm = !actionAlarm
@@ -499,7 +502,10 @@ fun TaskEditDialog(
                         Checkbox(
                             checked = actionAlarm,
                             onCheckedChange = {
-                                if (it && !isPostNotificationsPermissionGranted(context)) {
+                                if (it && (!isPostNotificationsPermissionGranted(context) || !isFullScreenIntentPermissionGranted(
+                                        context
+                                    ))
+                                ) {
                                     showPermissionDialog = true
                                 } else {
                                     actionAlarm = it
@@ -570,7 +576,10 @@ fun TaskEditDialog(
                             }
 
                             IconButton(onClick = {
-                                if (!isPostNotificationsPermissionGranted(context)) {
+                                if (!isPostNotificationsPermissionGranted(context) || !isFullScreenIntentPermissionGranted(
+                                        context
+                                    )
+                                ) {
                                     showPermissionDialog = true
                                 } else {
                                     val testTask = TaskEntity(

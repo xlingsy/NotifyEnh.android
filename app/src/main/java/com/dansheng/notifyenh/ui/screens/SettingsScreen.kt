@@ -2,6 +2,7 @@ package com.dansheng.notifyenh.ui.screens
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -82,6 +83,13 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     val retentionDays by appPreferences.retentionDaysFlow.collectAsState(initial = 7)
     var isPermissionGranted by remember { mutableStateOf(isNotificationServiceEnabled(context)) }
     var isPostNotifGranted by remember { mutableStateOf(isPostNotificationsPermissionGranted(context)) }
+    var isFullScreenIntentGranted by remember {
+        mutableStateOf(
+            isFullScreenIntentPermissionGranted(
+                context
+            )
+        )
+    }
     val isServiceRunning by NotifyEnhService.isServiceRunning.collectAsState()
     var isIgnoringBattery by remember { mutableStateOf(isIgnoringBatteryOptimizations(context)) }
     val isAlarmRinging by AlarmUtils.isAlarmRinging.collectAsState()
@@ -92,6 +100,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
             if (event == Lifecycle.Event.ON_RESUME) {
                 isPermissionGranted = isNotificationServiceEnabled(context)
                 isPostNotifGranted = isPostNotificationsPermissionGranted(context)
+                isFullScreenIntentGranted = isFullScreenIntentPermissionGranted(context)
                 isIgnoringBattery = isIgnoringBatteryOptimizations(context)
             }
         }
@@ -260,6 +269,41 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                             val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                                 putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                             }
+                            context.startActivity(intent)
+                        }
+                    }
+            )
+
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.full_screen_intent_permission)) },
+                supportingContent = {
+                    Text(
+                        if (isFullScreenIntentGranted) stringResource(R.string.permission_granted)
+                        else stringResource(R.string.permission_not_granted)
+                    )
+                },
+                trailingContent = {
+                    Switch(
+                        checked = isFullScreenIntentGranted,
+                        onCheckedChange = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                val intent =
+                                    Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                                        data = "package:${context.packageName}".toUri()
+                                    }
+                                context.startActivity(intent)
+                            }
+                        }
+                    )
+                },
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .clickable {
+                        if (!isFullScreenIntentGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                            val intent =
+                                Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                                    data = "package:${context.packageName}".toUri()
+                                }
                             context.startActivity(intent)
                         }
                     }
@@ -570,6 +614,15 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                 )
             }
         }
+    }
+}
+
+fun isFullScreenIntentPermissionGranted(context: Context): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.canUseFullScreenIntent()
+    } else {
+        true
     }
 }
 

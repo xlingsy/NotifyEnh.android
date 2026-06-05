@@ -39,12 +39,12 @@ class App : Application() {
 
         // Using a different ID for alarm channel to ensure it's recreated with correct importance
         val alarmChannel = NotificationChannel(
-            ALARM_CHANNEL_ID + "_v2",
+            ALARM_CHANNEL_ID,
             getString(R.string.action_alarm),
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            setSound(null, null)
             enableVibration(true)
+            setBypassDnd(true)
             lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
         }
         manager.createNotificationChannel(alarmChannel)
