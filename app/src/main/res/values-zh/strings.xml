@@ -50,6 +50,8 @@
     <string name="actions_label">触发操作:</string>
     <string name="search_app_placeholder">搜索应用名或包名</string>
     <string name="new_task">新任务</string>
+    <string name="reset_default">恢复默认</string>
+    <string name="test_alarm">测试响铃</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">设置</string>

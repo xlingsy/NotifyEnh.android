@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -61,6 +63,7 @@ import androidx.core.net.toUri
 import com.dansheng.notifyenh.R
 import com.dansheng.notifyenh.data.AppDatabase
 import com.dansheng.notifyenh.data.TaskEntity
+import com.dansheng.notifyenh.util.AlarmUtils
 import com.dansheng.notifyenh.util.BackupUtils
 import kotlinx.coroutines.launch
 
@@ -437,43 +440,72 @@ fun TaskEditDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(start = 32.dp, top = 4.dp)
-                                .clickable {
-                                    val intent =
-                                        Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                                            putExtra(
-                                                RingtoneManager.EXTRA_RINGTONE_TYPE,
-                                                RingtoneManager.TYPE_ALARM
-                                            )
-                                            putExtra(
-                                                RingtoneManager.EXTRA_RINGTONE_TITLE,
-                                                context.getString(R.string.select_ringtone)
-                                            )
-                                            putExtra(
-                                                RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
-                                                alarmRingtone?.toUri()
-                                            )
-                                            putExtra(
-                                                RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT,
-                                                true
-                                            )
-                                            putExtra(
-                                                RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT,
-                                                false
-                                            )
-                                        }
-                                    ringtonePickerLauncher.launch(intent)
-                                }
                         ) {
-                            Column {
-                                Text(
-                                    stringResource(R.string.select_ringtone),
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.primary
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clickable {
+                                        val intent =
+                                            Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                                                putExtra(
+                                                    RingtoneManager.EXTRA_RINGTONE_TYPE,
+                                                    RingtoneManager.TYPE_ALARM
+                                                )
+                                                putExtra(
+                                                    RingtoneManager.EXTRA_RINGTONE_TITLE,
+                                                    context.getString(R.string.select_ringtone)
+                                                )
+                                                putExtra(
+                                                    RingtoneManager.EXTRA_RINGTONE_EXISTING_URI,
+                                                    alarmRingtone?.toUri()
+                                                )
+                                                putExtra(
+                                                    RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT,
+                                                    true
+                                                )
+                                                putExtra(
+                                                    RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT,
+                                                    false
+                                                )
+                                            }
+                                        ringtonePickerLauncher.launch(intent)
+                                    }
+                            ) {
+                                Column {
+                                    Text(
+                                        stringResource(R.string.select_ringtone),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        currentRingtoneName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            IconButton(onClick = { alarmRingtone = null }) {
+                                Icon(
+                                    Icons.Default.Refresh,
+                                    contentDescription = stringResource(R.string.reset_default),
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
-                                Text(
-                                    currentRingtoneName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+
+                            IconButton(onClick = {
+                                val testTask = TaskEntity(
+                                    name = name.ifBlank { context.getString(R.string.action_alarm) },
+                                    alarmRingtone = alarmRingtone,
+                                    actionAlarm = true
+                                )
+                                AlarmUtils.startAlarm(testTask)
+                            }) {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = stringResource(R.string.test_alarm),
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }

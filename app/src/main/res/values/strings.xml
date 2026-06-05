@@ -50,6 +50,8 @@
     <string name="actions_label">Actions:</string>
     <string name="search_app_placeholder">Search app name or package</string>
     <string name="new_task">New Task</string>
+    <string name="reset_default">Restore Default</string>
+    <string name="test_alarm">Test Alarm</string>
 
     <!-- Settings Screen -->
     <string name="settings_title">Settings</string>
