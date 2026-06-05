@@ -3,6 +3,7 @@ package com.dansheng.notifyenh.util
 import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
 import android.media.MediaPlayer
@@ -187,5 +188,73 @@ object AlarmUtils {
         Log.d(TAG, "Notification posted with ID: $ALARM_NOTIFICATION_ID")
     }
 
+    fun getRingtoneName(context: Context, alarmRingtone: String?): String {
+        return if (alarmRingtone == null) {
+            context.getString(R.string.default_ringtone)
+        } else {
+            try {
+                val uri = alarmRingtone.toUri()
+                var title: String? = null
+
+                try {
+                    val ringtone = RingtoneManager.getRingtone(context, uri)
+                    title = ringtone?.getTitle(context)
+                } catch (_: Exception) {
+                }
+
+                // If title looks like a filename, try to query MediaStore for the real title
+                val isFilename = title == null || title.contains(Regex("[._][0-9]{2,4}$")) ||
+                        title.startsWith("ringtone_", true) ||
+                        title.startsWith("alarm_", true) ||
+                        title.startsWith("notification_", true)
+
+                if (isFilename && uri.scheme == "content") {
+                    try {
+                        context.contentResolver.query(
+                            uri,
+                            null,
+                            null,
+                            null,
+                            null
+                        )?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                // Try common title columns
+                                val titleColumn = cursor.getColumnIndex("title")
+                                val nameColumn = cursor.getColumnIndex("_display_name")
+
+                                val mediaTitle =
+                                    if (titleColumn != -1) cursor.getString(titleColumn) else null
+                                val displayName =
+                                    if (nameColumn != -1) cursor.getString(nameColumn) else null
+
+                                val candidate = mediaTitle ?: displayName
+                                if (!candidate.isNullOrBlank()) {
+                                    // Strip extension if it's a filename
+                                    title = if (candidate.contains('.')) {
+                                        candidate.substringBeforeLast('.')
+                                    } else {
+                                        candidate
+                                    }
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {
+                    }
+                }
+
+                // Cleanup title: replace underscores with spaces and capitalize
+                if (title != null
+                    && (title.startsWith("ringtone_", true)
+                            || title.startsWith("alarm_", true))
+                ) {
+                    title = title.replace('_', ' ').replaceFirstChar { it.uppercase() }
+                }
+
+                title ?: context.getString(R.string.default_ringtone)
+            } catch (_: Exception) {
+                context.getString(R.string.default_ringtone)
+            }
+        }
+    }
 
 }

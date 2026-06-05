@@ -93,39 +93,7 @@ fun TaskEditDialog(
     }
 
     val currentRingtoneName = remember(alarmRingtone) {
-        if (alarmRingtone == null) {
-            context.getString(R.string.default_ringtone)
-        } else {
-            try {
-                val uri = Uri.parse(alarmRingtone)
-                val ringtone = RingtoneManager.getRingtone(context, uri)
-                var title = ringtone?.getTitle(context)
-
-                // If title is just a filename like "ringtone_001", try to get a better one
-                if (title != null && (title.startsWith(
-                        "ringtone_",
-                        true
-                    ) || title.startsWith("alarm_", true))
-                ) {
-                    if (uri.scheme == "content") {
-                        context.contentResolver.query(
-                            uri,
-                            arrayOf(android.provider.MediaStore.Audio.Media.TITLE),
-                            null,
-                            null,
-                            null
-                        )?.use { cursor ->
-                            if (cursor.moveToFirst()) {
-                                title = cursor.getString(0)
-                            }
-                        }
-                    }
-                }
-                title ?: context.getString(R.string.default_ringtone)
-            } catch (e: Exception) {
-                context.getString(R.string.default_ringtone)
-            }
-        }
+        AlarmUtils.getRingtoneName(context, alarmRingtone)
     }
 
     if (showPermissionDialog) {
@@ -259,9 +227,8 @@ fun TaskEditDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                if (!actionAlarm && (!isPostNotificationsPermissionGranted(context) || !isFullScreenIntentPermissionGranted(
-                                        context
-                                    ))
+                                if (!actionAlarm && (!isPostNotificationsPermissionGranted(context)
+                                            || !isFullScreenIntentPermissionGranted(context))
                                 ) {
                                     showPermissionDialog = true
                                 } else {
@@ -272,9 +239,8 @@ fun TaskEditDialog(
                         Checkbox(
                             checked = actionAlarm,
                             onCheckedChange = {
-                                if (it && (!isPostNotificationsPermissionGranted(context) || !isFullScreenIntentPermissionGranted(
-                                        context
-                                    ))
+                                if (it && (!isPostNotificationsPermissionGranted(context)
+                                            || !isFullScreenIntentPermissionGranted(context))
                                 ) {
                                     showPermissionDialog = true
                                 } else {
@@ -346,9 +312,8 @@ fun TaskEditDialog(
                             }
 
                             IconButton(onClick = {
-                                if (!isPostNotificationsPermissionGranted(context) || !isFullScreenIntentPermissionGranted(
-                                        context
-                                    )
+                                if (!isPostNotificationsPermissionGranted(context)
+                                    || !isFullScreenIntentPermissionGranted(context)
                                 ) {
                                     showPermissionDialog = true
                                 } else {
