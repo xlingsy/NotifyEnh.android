@@ -88,9 +88,14 @@ fun TaskerScreen(modifier: Modifier = Modifier) {
     }
 
     val generalGroupTitle = stringResource(R.string.general_group)
-    
-    var expandedPackage by remember(groupedTasks) {
-        mutableStateOf(groupedTasks.firstOrNull()?.first)
+
+    var expandedPackage by remember { mutableStateOf<String?>(null) }
+    var hasAutoExpanded by remember { mutableStateOf(false) }
+
+    // Only auto-expand the first group when data is first loaded
+    if (!hasAutoExpanded && groupedTasks.isNotEmpty()) {
+        expandedPackage = groupedTasks.firstOrNull()?.first
+        hasAutoExpanded = true
     }
 
     Scaffold(
