@@ -107,7 +107,7 @@ object AlarmUtils {
             vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 500, 500), 0))
             Log.d(TAG, "Vibration started")
 
-            showAlarmNotification(taskEntity.name)
+            showAlarmNotification(taskEntity)
         } catch (e: Exception) {
             Log.e(TAG, "Error starting alarm", e)
         }
@@ -140,7 +140,8 @@ object AlarmUtils {
     }
 
     @SuppressLint("FullScreenIntentPolicy")
-    fun showAlarmNotification(taskName: String) {
+    fun showAlarmNotification(taskEntity: TaskEntity) {
+        val taskName = taskEntity.name
         Log.d(TAG, "Showing alarm notification for: $taskName")
         val stopIntent = Intent(App.instance, NotifyEnhService::class.java).apply {
             action = ACTION_STOP_ALARM
@@ -154,7 +155,7 @@ object AlarmUtils {
 
         val fullScreenIntent =
             Intent(App.instance, com.dansheng.notifyenh.ui.AlarmActivity::class.java).apply {
-                putExtra(EXTRA_TASK_ID, taskName)
+                putExtra(EXTRA_TASK_ID, taskEntity.id)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION
             }
         val fullScreenPendingIntent = PendingIntent.getActivity(
