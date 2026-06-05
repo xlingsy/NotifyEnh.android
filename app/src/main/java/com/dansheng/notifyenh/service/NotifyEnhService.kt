@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListener {
 
@@ -77,6 +78,9 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
     private lateinit var appPreferences: AppPreferences
     private var tts: TextToSpeech? = null
     private var isTtsInitialized = false
+
+    // 内存中的通知查重缓存，Key: pkg|title|content, Value: postTime
+    private val notificationCache = ConcurrentHashMap<String, Long>()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -164,8 +168,13 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
 
-        // 过滤常驻通知（如媒体播放、系统常驻服务等）
+        // 1. 过滤常驻通知（如媒体播放、系统常驻服务等）
         if (!sbn.isClearable) {
+            return
+        }
+
+        // 2. 过滤掉组摘要通知（Group Summary），避免重复记录
+        if (sbn.notification.flags and android.app.Notification.FLAG_GROUP_SUMMARY != 0) {
             return
         }
 
@@ -179,6 +188,17 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         if (title.isEmpty() && content.isEmpty()) {
             return
         }
+
+        // 3. 查重逻辑：使用内存缓存检查 2 秒内的重复通知
+        val cacheKey = "$pkg|$title|$content"
+        val lastTime = notificationCache[cacheKey]
+        if (lastTime != null && (postTime - lastTime) < 2000) {
+            Log.d(TAG, "Duplicate notification detected (in-memory), skipping: $pkg")
+            return
+        }
+        // 更新缓存并清理旧数据
+        notificationCache[cacheKey] = postTime
+        cleanNotificationCache(postTime)
         
         // 存入数据库
         serviceScope.launch {
@@ -200,6 +220,17 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
             // 如果触发了任务，执行操作
             triggeredTask?.let {
                 handleAction(it, sbn, title, content)
+            }
+        }
+    }
+
+    private fun cleanNotificationCache(currentTime: Long) {
+        // 定期清理超过 5 秒的缓存，防止内存无限增长
+        val iterator = notificationCache.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (currentTime - entry.value > 5000) {
+                iterator.remove()
             }
         }
     }
