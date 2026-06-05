@@ -134,37 +134,6 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         }
     }
 
-    private fun startForegroundService() {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.fg_service_title))
-            .setContentText(getString(R.string.fg_service_text))
-            .setSmallIcon(R.drawable.ic_notification)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .setContentIntent(pendingIntent)
-            .build()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
-    }
-
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
 
@@ -260,21 +229,14 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
     }
 
     private fun isMatch(task: TaskEntity, title: String, content: String): Boolean {
-        // 1. 如果标题和内容模式都为空，则认为不匹配（必须至少设置一个模式，或者包名匹配已经在外部过滤）
-        // 实际上，如果包名匹配了，且没有设置任何模式，用户可能希望匹配该应用的所有通知。
-        // 但根据之前的逻辑，至少要有一个匹配。
-        if (task.titlePattern.isNullOrBlank() && task.contentPattern.isNullOrBlank()) {
-            return true // 如果没有设置任何模式，只要包名匹配（已经在 DAO 过滤），就匹配所有
-        }
-
-        // 2. 匹配标题 (如果设置了标题模式)
+        // 匹配标题 (如果设置了标题模式)
         if (!task.titlePattern.isNullOrBlank()) {
             if (!checkPattern(task.titlePattern, title, task.isRegex)) {
                 return false
             }
         }
 
-        // 3. 匹配内容 (如果设置了内容模式)
+        // 匹配内容 (如果设置了内容模式)
         if (!task.contentPattern.isNullOrBlank()) {
             if (!checkPattern(task.contentPattern, content, task.isRegex)) {
                 return false
@@ -324,4 +286,36 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         tts?.shutdown()
         AlarmUtils.stopAlarm(true)
     }
+
+    private fun startForegroundService() {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.fg_service_title))
+            .setContentText(getString(R.string.fg_service_text))
+            .setSmallIcon(R.drawable.ic_notification)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
+    }
+
 }
