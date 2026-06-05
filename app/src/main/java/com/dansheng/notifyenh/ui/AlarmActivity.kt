@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import com.dansheng.notifyenh.R
 import com.dansheng.notifyenh.service.NotifyEnhService
 import com.dansheng.notifyenh.ui.theme.NotifyEnhTheme
+import com.dansheng.notifyenh.util.AlarmUtils
 
 class AlarmActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,7 +46,7 @@ class AlarmActivity : ComponentActivity() {
 
         setContent {
             NotifyEnhTheme {
-                val isRinging by NotifyEnhService.isAlarmRinging.collectAsState()
+                val isRinging by AlarmUtils.isAlarmRinging.collectAsState()
 
                 LaunchedEffect(isRinging) {
                     if (!isRinging) {

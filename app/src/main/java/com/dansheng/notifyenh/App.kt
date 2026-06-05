@@ -13,6 +13,8 @@ class App : Application() {
 
         const val CHANNEL_ID = "notify_enh_service_channel"
         const val ALARM_CHANNEL_ID = "notify_enh_alarm_channel"
+        const val NOTIFICATION_ID = 1001
+        const val ALARM_NOTIFICATION_ID = 1002
     }
 
 
