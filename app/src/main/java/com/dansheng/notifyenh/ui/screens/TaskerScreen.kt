@@ -313,8 +313,15 @@ fun TaskEditDialog(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
-            val uri =
+            val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                result.data?.getParcelableExtra(
+                    RingtoneManager.EXTRA_RINGTONE_PICKED_URI,
+                    Uri::class.java
+                )
+            } else {
+                @Suppress("DEPRECATION")
                 result.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            }
             alarmRingtone = uri?.toString()
         }
     }
@@ -324,38 +331,35 @@ fun TaskEditDialog(
             context.getString(R.string.default_ringtone)
         } else {
             try {
-                val ringtone = RingtoneManager.getRingtone(context, Uri.parse(alarmRingtone))
-                ringtone.getTitle(context)
+                val uri = Uri.parse(alarmRingtone)
+                val ringtone = RingtoneManager.getRingtone(context, uri)
+                var title = ringtone?.getTitle(context)
+
+                // If title is just a filename like "ringtone_001", try to get a better one
+                if (title != null && (title.startsWith(
+                        "ringtone_",
+                        true
+                    ) || title.startsWith("alarm_", true))
+                ) {
+                    if (uri.scheme == "content") {
+                        context.contentResolver.query(
+                            uri,
+                            arrayOf(android.provider.MediaStore.Audio.Media.TITLE),
+                            null,
+                            null,
+                            null
+                        )?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                title = cursor.getString(0)
+                            }
+                        }
+                    }
+                }
+                title ?: context.getString(R.string.default_ringtone)
             } catch (e: Exception) {
                 context.getString(R.string.default_ringtone)
             }
         }
-    }
-
-    if (showPermissionDialog) {
-        AlertDialog(
-            onDismissRequest = { showPermissionDialog = false },
-            title = { Text(stringResource(R.string.post_notif_permission)) },
-            text = { Text(stringResource(R.string.alarm_permission_required)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showPermissionDialog = false
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                        }
-                        context.startActivity(intent)
-                    }
-                }) {
-                    Text(stringResource(R.string.go_to_settings))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showPermissionDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
     }
 
     if (showPermissionDialog) {
