@@ -52,20 +52,13 @@ import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.dansheng.notifyenh.R
-import com.dansheng.notifyenh.data.AppDatabase
-import com.dansheng.notifyenh.data.TaskEntity
 import com.dansheng.notifyenh.data.prefs.AppPreferences
 import com.dansheng.notifyenh.data.prefs.ThemeMode
 import com.dansheng.notifyenh.service.NotifyEnhService
 import com.dansheng.notifyenh.ui.components.ChangelogDialog
 import com.dansheng.notifyenh.util.AlarmUtils
 import com.dansheng.notifyenh.util.BackupUtils
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -75,7 +68,6 @@ import java.util.Locale
 fun SettingsScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val database = remember { AppDatabase.getDatabase(context) }
     val appPreferences = remember { AppPreferences(context) }
 
     val themeMode by appPreferences.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
@@ -120,23 +112,16 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                val tasks = database.taskDao().getAllTasksList()
-                val json = Json.encodeToString(tasks)
-                try {
-                    withContext(Dispatchers.IO) {
-                        context.contentResolver.openOutputStream(it, "wt")?.use { stream ->
-                            stream.write(json.toByteArray())
-                        }
-                    }
+                val result = BackupUtils.exportTasks(context, it)
+                if (result.isSuccess) {
+                    Toast.makeText(context, exportSuccessMsg, Toast.LENGTH_SHORT).show()
+                } else {
                     Toast.makeText(
                         context,
-                        exportSuccessMsg,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } catch (e: Exception) {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.export_failed, e.message),
+                        context.getString(
+                            R.string.export_failed,
+                            result.exceptionOrNull()?.message
+                        ),
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -150,27 +135,16 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                try {
-                    val content = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(it)?.use { stream ->
-                            BufferedReader(InputStreamReader(stream)).readText()
-                        }
-                    }
-                    val tasks = Json.decodeFromString<List<TaskEntity>>(content ?: "")
-                    // 清除 ID 以便重新插入
-                    val newTasks = tasks.map { taskEntity ->
-                        taskEntity.copy(id = 0)
-                    }
-                    database.taskDao().insertAll(newTasks)
+                val result = BackupUtils.importTasks(context, it)
+                if (result.isSuccess) {
+                    Toast.makeText(context, importCompletedMsg, Toast.LENGTH_SHORT).show()
+                } else {
                     Toast.makeText(
                         context,
-                        importCompletedMsg,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } catch (e: Exception) {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.import_failed, e.message),
+                        context.getString(
+                            R.string.import_failed,
+                            result.exceptionOrNull()?.message
+                        ),
                         Toast.LENGTH_SHORT
                     ).show()
                 }

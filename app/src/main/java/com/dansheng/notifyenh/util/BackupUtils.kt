@@ -1,13 +1,16 @@
 package com.dansheng.notifyenh.util
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.dansheng.notifyenh.data.AppDatabase
 import com.dansheng.notifyenh.data.TaskEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 
 object BackupUtils {
     private const val TAG = "BackupUtils"
@@ -46,6 +49,44 @@ object BackupUtils {
             } catch (e: Exception) {
                 Log.e(TAG, "Restore from auto backup failed", e)
                 false
+            }
+        }
+    }
+
+    suspend fun exportTasks(context: Context, uri: Uri): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val database = AppDatabase.getDatabase(context)
+                val tasks = database.taskDao().getAllTasksList()
+                val json = Json.encodeToString(tasks)
+                context.contentResolver.openOutputStream(uri, "wt")?.use { stream ->
+                    stream.write(json.toByteArray())
+                }
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e(TAG, "Export tasks failed", e)
+                Result.failure(e)
+            }
+        }
+    }
+
+    suspend fun importTasks(context: Context, uri: Uri): Result<Unit> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val content = context.contentResolver.openInputStream(uri)?.use { stream ->
+                    BufferedReader(InputStreamReader(stream)).readText()
+                }
+                val tasks = Json.decodeFromString<List<TaskEntity>>(content ?: "")
+                // 清除 ID 以便重新插入
+                val newTasks = tasks.map { taskEntity ->
+                    taskEntity.copy(id = 0)
+                }
+                val database = AppDatabase.getDatabase(context)
+                database.taskDao().insertAll(newTasks)
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e(TAG, "Import tasks failed", e)
+                Result.failure(e)
             }
         }
     }
