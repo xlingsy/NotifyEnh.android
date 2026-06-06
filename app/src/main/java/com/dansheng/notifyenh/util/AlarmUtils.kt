@@ -83,8 +83,7 @@ object AlarmUtils {
         try {
             if (mediaPlayer == null) {
                 val alarmUri: Uri = taskEntity.alarmRingtone?.toUri()
-                    ?: (RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                        ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE))
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
                 mediaPlayer = MediaPlayer().apply {
                     setDataSource(App.instance, alarmUri)
                     setAudioAttributes(
@@ -171,7 +170,7 @@ object AlarmUtils {
             .setContentText(App.instance.getString(R.string.alarm_active, taskName))
             .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setCategory(NotificationCompat.CATEGORY_CALL)
             .setOngoing(true)
             .setAutoCancel(false)
             .setFullScreenIntent(fullScreenPendingIntent, true)
