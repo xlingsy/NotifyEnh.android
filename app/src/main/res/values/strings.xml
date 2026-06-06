@@ -37,6 +37,7 @@
     <string name="select_ringtone">Select Ringtone</string>
     <string name="default_ringtone">Default</string>
     <string name="alarm_active">Alarm Active: %1$s</string>
+    <string name="snooze_alarm">Snooze</string>
     <string name="stop_alarm">Stop</string>
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>

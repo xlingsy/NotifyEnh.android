@@ -37,6 +37,7 @@
     <string name="select_ringtone">选择铃声</string>
     <string name="default_ringtone">默认</string>
     <string name="alarm_active">提醒中: %1$s</string>
+    <string name="snooze_alarm">稍后</string>
     <string name="stop_alarm">停止</string>
     <string name="edit">编辑</string>
     <string name="delete">删除</string>
