@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dansheng.notifyenh.R
 import com.dansheng.notifyenh.service.NotifyEnhService
@@ -116,7 +117,8 @@ fun AlarmContent(onStop: () -> Unit) {
         Text(
             text = alarmMsgList.joinToString("\n"),
             style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onErrorContainer
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(64.dp))
