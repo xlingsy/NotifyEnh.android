@@ -14,7 +14,6 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
-import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import com.dansheng.notifyenh.App
@@ -167,22 +166,20 @@ object AlarmUtils {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val remoteViews =
-            RemoteViews(App.instance.packageName, R.layout.layout_alarm_notification).apply {
-                setTextViewText(R.id.task_name, taskName)
-                setOnClickPendingIntent(R.id.btn_stop, stopPendingIntent)
-            }
-
         val notification = NotificationCompat.Builder(App.instance, ALARM_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(App.instance.getString(R.string.alarm_title))
+            .setContentText(App.instance.getString(R.string.alarm_active, taskName))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setOngoing(true)
             .setAutoCancel(false)
             .setFullScreenIntent(fullScreenPendingIntent, true)
-            .setCustomContentView(remoteViews)
-            .setCustomHeadsUpContentView(remoteViews)
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                App.instance.getString(R.string.stop_alarm),
+                stopPendingIntent
+            )
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
 
