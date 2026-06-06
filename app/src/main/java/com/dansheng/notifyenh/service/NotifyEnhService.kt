@@ -117,7 +117,7 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         Log.d(TAG, "Service disconnected")
 
         // 尝试重新绑定服务
-        requestRebind(ComponentName(this, NotifyEnhService::class.java))
+        tryReconnectService(this)
     }
 
     override fun onCreate() {
