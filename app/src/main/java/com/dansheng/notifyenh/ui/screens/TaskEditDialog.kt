@@ -318,6 +318,7 @@ fun TaskEditDialog(
                                     showPermissionDialog = true
                                 } else {
                                     val testTask = TaskEntity(
+                                        id = task?.id ?: 0,
                                         name = name.ifBlank { context.getString(R.string.action_alarm) },
                                         alarmRingtone = alarmRingtone,
                                         actionAlarm = true
