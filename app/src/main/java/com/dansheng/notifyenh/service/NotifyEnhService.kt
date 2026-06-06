@@ -87,11 +87,6 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
             AlarmUtils.ACTION_STOP_ALARM -> {
                 AlarmUtils.stopAlarm(isUserDismissed = true)
             }
-
-            AlarmUtils.ACTION_SNOOZE_ALARM -> {
-                val taskId = intent.getLongExtra(AlarmUtils.EXTRA_TASK_ID, -1)
-                startAlarm(taskId)
-            }
         }
         return super.onStartCommand(intent, flags, startId)
     }

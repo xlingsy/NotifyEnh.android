@@ -145,17 +145,6 @@ object AlarmUtils {
         val taskName = taskEntity.name
         Log.d(TAG, "Showing alarm notification for: $taskName")
 
-        val snoozeIntent = Intent(App.instance, NotifyEnhService::class.java).apply {
-            action = ACTION_SNOOZE_ALARM
-            putExtra(EXTRA_TASK_ID, taskEntity.id)
-        }
-        val snoozePendingIntent = PendingIntent.getService(
-            App.instance,
-            1,
-            snoozeIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
         val stopIntent = Intent(App.instance, NotifyEnhService::class.java).apply {
             action = ACTION_STOP_ALARM
         }
@@ -181,7 +170,6 @@ object AlarmUtils {
         val remoteViews =
             RemoteViews(App.instance.packageName, R.layout.layout_alarm_notification).apply {
                 setTextViewText(R.id.task_name, taskName)
-                setOnClickPendingIntent(R.id.btn_snooze, snoozePendingIntent)
                 setOnClickPendingIntent(R.id.btn_stop, stopPendingIntent)
             }
 
