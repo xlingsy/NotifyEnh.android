@@ -1,5 +1,9 @@
 # 通知增强
 
+## 关注公众号(开源阅读)获取更新消息
+
+[查看更新日志 (Changelog)](app/src/main/assets/CHANGELOG.md)
+
 * Android 通知增强工具，旨在通过自动化任务提升通知处理效率。
 * 无网络权限，安全可靠。
 
