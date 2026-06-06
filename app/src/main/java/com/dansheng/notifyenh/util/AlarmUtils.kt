@@ -82,24 +82,27 @@ object AlarmUtils {
 
         try {
             if (mediaPlayer == null) {
-                val alarmUri: Uri = taskEntity.alarmRingtone?.toUri()
-                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-                mediaPlayer = MediaPlayer().apply {
-                    setDataSource(App.instance, alarmUri)
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build()
-                    )
-                    isLooping = true
-                    prepare()
-                }
+                mediaPlayer = MediaPlayer()
+            } else {
+                mediaPlayer?.reset()
             }
 
-            if (mediaPlayer?.isPlaying == false) {
-                mediaPlayer?.start()
-                Log.d(TAG, "MediaPlayer started")
+            val alarmUri: Uri = taskEntity.alarmRingtone?.toUri()
+                ?: (RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE))
+
+            mediaPlayer?.apply {
+                setDataSource(App.instance, alarmUri)
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_ALARM)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                )
+                isLooping = true
+                prepare()
+                start()
+                Log.d(TAG, "MediaPlayer started with URI: $alarmUri")
             }
 
             // Vibrate
