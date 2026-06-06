@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.dansheng.notifyenh.R
+import dev.jeziellago.compose.markdowntext.MarkdownText
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -29,7 +30,7 @@ fun ChangelogDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    var changelogText by remember { mutableStateOf("Loading...") }
+    var changelogText by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         try {
@@ -64,10 +65,15 @@ fun ChangelogDialog(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                Text(
-                    text = changelogText,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+
+                if (changelogText.isNotEmpty()) {
+                    MarkdownText(
+                        markdown = changelogText,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    )
+                }
             }
         },
         confirmButton = {
