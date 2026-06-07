@@ -9,7 +9,6 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.dansheng.notifyenh.App.Companion.CHANNEL_ID
@@ -22,6 +21,7 @@ import com.dansheng.notifyenh.data.TaskEntity
 import com.dansheng.notifyenh.data.prefs.AppPreferences
 import com.dansheng.notifyenh.util.AlarmUtils
 import com.dansheng.notifyenh.util.AlarmUtils.startAlarm
+import com.dansheng.notifyenh.util.TTS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,10 +30,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
-class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListener {
+class NotifyEnhService : NotificationListenerService() {
 
     companion object {
         private const val TAG = "NotifyEnhService"
@@ -76,8 +75,6 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var database: AppDatabase
     private lateinit var appPreferences: AppPreferences
-    private var tts: TextToSpeech? = null
-    private var isTtsInitialized = false
 
     // 内存中的通知查重缓存，Key: pkg|title|content, Value: postTime
     private val notificationCache = ConcurrentHashMap<String, Long>()
@@ -119,14 +116,6 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         super.onCreate()
         database = AppDatabase.getDatabase(this)
         appPreferences = AppPreferences(this)
-        tts = TextToSpeech(this, this)
-    }
-
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale.getDefault()
-            isTtsInitialized = true
-        }
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -263,9 +252,9 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
             cancelNotification(sbn.key)
         }
 
-        if (task.actionTts && isTtsInitialized) {
+        if (task.actionTts) {
             val speechText = if (title.isNotBlank()) "$title: $content" else content
-            tts?.speak(speechText, TextToSpeech.QUEUE_ADD, null, "notify_${sbn.postTime}")
+            TTS.speak(speechText)
         }
 
         if (task.actionAlarm) {
@@ -277,8 +266,6 @@ class NotifyEnhService : NotificationListenerService(), TextToSpeech.OnInitListe
         super.onDestroy()
         _isServiceRunning.value = false
         instance = null
-        tts?.stop()
-        tts?.shutdown()
         AlarmUtils.stopAlarm(true)
     }
 
