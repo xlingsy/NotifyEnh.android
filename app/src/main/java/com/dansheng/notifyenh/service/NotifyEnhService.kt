@@ -164,10 +164,6 @@ class NotifyEnhService : NotificationListenerService() {
             val cacheKey = "$pkg|$title|$content"
             val lastTime = notificationCache[cacheKey]
             if (lastTime != null && (postTime - lastTime) < 2000) {
-                Log.d(
-                    TAG,
-                    "Duplicate notification detected (in-memory), skipping recording/TTS/Alarm: $pkg"
-                )
                 return@launch
             }
 
@@ -212,10 +208,11 @@ class NotifyEnhService : NotificationListenerService() {
 
     private fun cleanNotificationCache() {
         // 定期清理超过 5 秒的缓存，防止内存无限增长
+        val now = System.currentTimeMillis()
         val iterator = notificationCache.entries.iterator()
         while (iterator.hasNext()) {
             val entry = iterator.next()
-            if (System.currentTimeMillis() - entry.value > 5000) {
+            if (now - entry.value > 5000) {
                 iterator.remove()
             }
         }
