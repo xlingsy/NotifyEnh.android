@@ -142,22 +142,32 @@ class NotifyEnhService : NotificationListenerService() {
             return
         }
 
-        // 3. 查重逻辑：使用内存缓存检查 2 秒内的重复通知
-        val cacheKey = "$pkg|$title|$content"
-        val lastTime = notificationCache[cacheKey]
-        if (lastTime != null && (postTime - lastTime) < 2000) {
-            Log.d(TAG, "Duplicate notification detected (in-memory), skipping: $pkg")
-            return
-        }
-        // 更新缓存并清理旧数据
-        notificationCache[cacheKey] = postTime
-        cleanNotificationCache(postTime)
-        
-        // 存入数据库
+        // 存入数据库及处理任务
         serviceScope.launch {
-            // 先处理任务以确定是否触发
+            // 1. 先匹配任务，获取触发规则
             val triggeredTask = findTriggeredTask(sbn, title, content)
 
+            // 2. 无论是否重复，如果任务要求取消通知，则立即执行取消
+            if (triggeredTask?.actionCancel == true) {
+                cancelNotification(sbn.key)
+            }
+
+            // 3. 查重逻辑：针对 数据库记录、TTS 和 响铃，2秒内视为重复
+            val cacheKey = "$pkg|$title|$content"
+            val lastTime = notificationCache[cacheKey]
+            if (lastTime != null && (postTime - lastTime) < 2000) {
+                Log.d(
+                    TAG,
+                    "Duplicate notification detected (in-memory), skipping recording/TTS/Alarm: $pkg"
+                )
+                return@launch
+            }
+
+            // 更新缓存并清理
+            notificationCache[cacheKey] = postTime
+            cleanNotificationCache(postTime)
+
+            // 4. 存入数据库
             val entity = NotificationEntity(
                 packageName = pkg,
                 title = title,
@@ -170,10 +180,25 @@ class NotifyEnhService : NotificationListenerService() {
             // 清理旧通知
             cleanupOldNotifications()
 
-            // 如果触发了任务，执行操作
+            // 5. 执行剩余操作 (TTS, 响铃)
             triggeredTask?.let {
-                handleAction(it, sbn, title, content)
+                handleRemainingActions(it, title, content)
             }
+        }
+    }
+
+    private fun handleRemainingActions(
+        task: TaskEntity,
+        title: String,
+        content: String
+    ) {
+        if (task.actionTts) {
+            val speechText = if (title.isNotBlank()) "$title: $content" else content
+            TTS.speak(speechText)
+        }
+
+        if (task.actionAlarm) {
+            startAlarm(task)
         }
     }
 
@@ -239,26 +264,6 @@ class NotifyEnhService : NotificationListenerService() {
             }
         } catch (_: Exception) {
             false
-        }
-    }
-
-    private fun handleAction(
-        task: TaskEntity,
-        sbn: StatusBarNotification,
-        title: String,
-        content: String
-    ) {
-        if (task.actionCancel) {
-            cancelNotification(sbn.key)
-        }
-
-        if (task.actionTts) {
-            val speechText = if (title.isNotBlank()) "$title: $content" else content
-            TTS.speak(speechText)
-        }
-
-        if (task.actionAlarm) {
-            startAlarm(task)
         }
     }
 
