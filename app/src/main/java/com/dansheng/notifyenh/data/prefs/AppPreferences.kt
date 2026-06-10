@@ -23,6 +23,8 @@ class AppPreferences(private val context: Context) {
         val PERSISTENT_MODE_KEY = booleanPreferencesKey("persistent_mode")
         val RETENTION_DAYS_KEY = intPreferencesKey("retention_days")
         val LAST_SEEN_VERSION_KEY = intPreferencesKey("last_seen_version")
+        val LAST_CLEANUP_TIME_KEY =
+            androidx.datastore.preferences.core.longPreferencesKey("last_cleanup_time")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.dataStore.data
@@ -46,6 +48,11 @@ class AppPreferences(private val context: Context) {
             preferences[LAST_SEEN_VERSION_KEY] ?: 0
         }
 
+    val lastCleanupTimeFlow: Flow<Long> = context.dataStore.data
+        .map { preferences ->
+            preferences[LAST_CLEANUP_TIME_KEY] ?: 0L
+        }
+
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { preferences ->
             preferences[THEME_MODE_KEY] = mode.name
@@ -67,6 +74,12 @@ class AppPreferences(private val context: Context) {
     suspend fun setLastSeenVersion(version: Int) {
         context.dataStore.edit { preferences ->
             preferences[LAST_SEEN_VERSION_KEY] = version
+        }
+    }
+
+    suspend fun setLastCleanupTime(time: Long) {
+        context.dataStore.edit { preferences ->
+            preferences[LAST_CLEANUP_TIME_KEY] = time
         }
     }
 }

@@ -237,9 +237,21 @@ class NotifyEnhService : NotificationListenerService() {
 
     private suspend fun cleanupOldNotifications() {
         try {
+            val now = System.currentTimeMillis()
+            val lastCleanup = appPreferences.lastCleanupTimeFlow.first()
+
+            // 如果距离上次清理不足 24 小时，则跳过
+            if (now - lastCleanup < 24L * 60L * 60L * 1000L) {
+                return
+            }
+
             val days = appPreferences.retentionDaysFlow.first()
-            val cutoff = System.currentTimeMillis() - (days * 24L * 60L * 60L * 1000L)
+            val cutoff = now - (days * 24L * 60L * 60L * 1000L)
             database.notificationDao().deleteOldNotifications(cutoff)
+
+            // 更新最后清理时间
+            appPreferences.setLastCleanupTime(now)
+            Log.d(TAG, "Old notifications cleaned up successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to cleanup old notifications", e)
         }
