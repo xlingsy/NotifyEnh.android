@@ -39,14 +39,17 @@ fun LogDialog(onDismiss: () -> Unit) {
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
-                val process = Runtime.getRuntime().exec("logcat -d")
+                // 仅显示本软件相关的关键标签日志，并包含系统崩溃堆栈 (AndroidRuntime)
+                val command =
+                    "logcat -d NotifyEnhService:V AlarmUtils:V BackupUtils:V AlarmActivity:V AndroidRuntime:E *:S"
+                val process = Runtime.getRuntime().exec(command)
                 val reader = BufferedReader(InputStreamReader(process.inputStream))
                 val logOutput = StringBuilder()
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
                     logOutput.append(line).append("\n")
                 }
-                logs = logOutput.toString()
+                logs = logOutput.toString().ifBlank { "No relevant logs found." }
             } catch (e: Exception) {
                 logs = "Failed to fetch logs: ${e.message}"
             } finally {
