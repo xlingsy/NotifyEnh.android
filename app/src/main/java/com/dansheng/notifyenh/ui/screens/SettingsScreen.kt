@@ -214,7 +214,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
                                 if (checked) {
                                     NotifyEnhService.tryReconnectService(context)
                                 } else {
-                                    NotifyEnhService.stopService()
+                                    NotifyEnhService.stopService(context)
                                 }
                             }
                         }

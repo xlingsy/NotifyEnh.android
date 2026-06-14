@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.lifecycleScope
 import com.dansheng.notifyenh.data.prefs.AppPreferences
 import com.dansheng.notifyenh.data.prefs.ThemeMode
 import com.dansheng.notifyenh.service.NotifyEnhService
@@ -32,6 +33,7 @@ import com.dansheng.notifyenh.ui.screens.SettingsScreen
 import com.dansheng.notifyenh.ui.screens.TaskerScreen
 import com.dansheng.notifyenh.ui.screens.isNotificationServiceEnabled
 import com.dansheng.notifyenh.ui.theme.NotifyEnhTheme
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -39,9 +41,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val appPreferences = AppPreferences(this)
 
-        // 当应用启动时，如果权限已授予但服务未连接，尝试强制重连
-        if (isNotificationServiceEnabled(this) && !NotifyEnhService.isServiceRunning.value) {
-            NotifyEnhService.tryReconnectService(this)
+        // 当应用启动时，如果权限已授予但服务未连接，检查是否为手动关闭，否则尝试强制重连
+        lifecycleScope.launch {
+            if (isNotificationServiceEnabled(this@MainActivity) &&
+                !NotifyEnhService.isServiceRunning.value &&
+                !appPreferences.isManuallyStoppedFlow.first()
+            ) {
+                NotifyEnhService.tryReconnectService(this@MainActivity)
+            }
         }
 
         enableEdgeToEdge()

@@ -25,6 +25,7 @@ class AppPreferences(private val context: Context) {
         val LAST_SEEN_VERSION_KEY = intPreferencesKey("last_seen_version")
         val LAST_CLEANUP_TIME_KEY =
             androidx.datastore.preferences.core.longPreferencesKey("last_cleanup_time")
+        val IS_MANUALLY_STOPPED_KEY = booleanPreferencesKey("is_manually_stopped")
     }
 
     val themeModeFlow: Flow<ThemeMode> = context.dataStore.data
@@ -51,6 +52,11 @@ class AppPreferences(private val context: Context) {
     val lastCleanupTimeFlow: Flow<Long> = context.dataStore.data
         .map { preferences ->
             preferences[LAST_CLEANUP_TIME_KEY] ?: 0L
+        }
+
+    val isManuallyStoppedFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[IS_MANUALLY_STOPPED_KEY] ?: false
         }
 
     suspend fun setThemeMode(mode: ThemeMode) {
@@ -80,6 +86,12 @@ class AppPreferences(private val context: Context) {
     suspend fun setLastCleanupTime(time: Long) {
         context.dataStore.edit { preferences ->
             preferences[LAST_CLEANUP_TIME_KEY] = time
+        }
+    }
+
+    suspend fun setManuallyStopped(stopped: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[IS_MANUALLY_STOPPED_KEY] = stopped
         }
     }
 }

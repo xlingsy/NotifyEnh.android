@@ -44,15 +44,21 @@ class NotifyEnhService : NotificationListenerService() {
 
         private var instance: NotifyEnhService? = null
 
-        fun stopService() {
+        fun stopService(context: Context) {
             instance?.requestUnbind()
             _isServiceRunning.value = false
+            CoroutineScope(Dispatchers.IO).launch {
+                AppPreferences(context).setManuallyStopped(true)
+            }
         }
 
         /**
          * 强制重启通知监听服务（解决系统杀死应用后服务无法自动恢复的问题）
          */
         fun tryReconnectService(context: Context) {
+            CoroutineScope(Dispatchers.IO).launch {
+                AppPreferences(context).setManuallyStopped(false)
+            }
             val componentName = ComponentName(context, NotifyEnhService::class.java)
             val pm = context.packageManager
 
@@ -102,6 +108,10 @@ class NotifyEnhService : NotificationListenerService() {
         instance = this
         Log.d(TAG, "Service connected")
 
+        serviceScope.launch {
+            appPreferences.setManuallyStopped(false)
+        }
+
         // 检查是否需要开启前台服务
         serviceScope.launch {
             if (appPreferences.persistentModeFlow.first()) {
@@ -117,7 +127,11 @@ class NotifyEnhService : NotificationListenerService() {
         Log.d(TAG, "Service disconnected")
 
         // 尝试重新绑定服务
-        tryReconnectService(this)
+        serviceScope.launch {
+            if (!appPreferences.isManuallyStoppedFlow.first()) {
+                tryReconnectService(this@NotifyEnhService)
+            }
+        }
     }
 
     override fun onCreate() {
