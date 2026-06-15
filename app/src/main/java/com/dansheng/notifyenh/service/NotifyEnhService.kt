@@ -23,6 +23,7 @@ import com.dansheng.notifyenh.data.TaskEntity
 import com.dansheng.notifyenh.data.prefs.AppPreferences
 import com.dansheng.notifyenh.util.AlarmUtils
 import com.dansheng.notifyenh.util.AlarmUtils.startAlarm
+import com.dansheng.notifyenh.util.LogUtils
 import com.dansheng.notifyenh.util.TTS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,7 +79,7 @@ class NotifyEnhService : NotificationListenerService() {
 
             // 额外尝试主动请求重连
             requestRebind(componentName)
-            Log.d(TAG, "Attempted to hard reconnect NotificationListenerService")
+            LogUtils.d("Attempted to hard reconnect NotificationListenerService")
         }
     }
 
@@ -108,7 +109,7 @@ class NotifyEnhService : NotificationListenerService() {
         super.onListenerConnected()
         _isServiceRunning.value = true
         instance = this
-        Log.d(TAG, "Service connected")
+        LogUtils.d("Service connected")
 
         serviceScope.launch {
             appPreferences.setManuallyStopped(false)
@@ -126,7 +127,7 @@ class NotifyEnhService : NotificationListenerService() {
         super.onListenerDisconnected()
         _isServiceRunning.value = false
         instance = null
-        Log.d(TAG, "Service disconnected")
+        LogUtils.d("Service disconnected")
 
         // 尝试重新绑定服务
         serviceScope.launch {
@@ -173,7 +174,7 @@ class NotifyEnhService : NotificationListenerService() {
 
             // 2. 无论是否重复，如果任务要求取消通知，则立即执行取消
             if (triggeredTask?.actionCancel == true) {
-                Log.d(TAG, "Action: Cancel notification ${sbn.key}")
+                LogUtils.d("Action: Cancel notification ${sbn.key}")
                 cancelNotification(sbn.key)
                 // 针对部分系统可能存在的延迟，200ms 后再试一次
                 delay(200.milliseconds)
