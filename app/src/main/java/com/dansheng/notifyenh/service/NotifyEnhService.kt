@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 
 class NotifyEnhService : NotificationListenerService() {
@@ -259,14 +260,14 @@ class NotifyEnhService : NotificationListenerService() {
             val lastCleanup = appPreferences.lastCleanupTimeFlow.first()
 
             // 如果距离上次清理不足 24 小时，则跳过
-            if (now - lastCleanup < 24L * 60L * 60L * 1000L) {
+            if (now - lastCleanup < 1.days.inWholeMilliseconds) {
                 return
             }
 
             val days = appPreferences.retentionDaysFlow.first()
-            val cutoff = now - (days * 24L * 60L * 60L * 1000L)
+            val cutoff = now - days.days.inWholeMilliseconds
             database.notificationDao().deleteOldNotifications(cutoff)
-            database.logDao().deleteOldLogs(now - 24L * 60L * 60L * 1000L)
+            database.logDao().deleteOldLogs(cutoff)
 
             // 更新最后清理时间
             appPreferences.setLastCleanupTime(now)
