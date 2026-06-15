@@ -15,7 +15,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import com.dansheng.notifyenh.App
@@ -38,8 +37,6 @@ import kotlinx.coroutines.withContext
 
 object AlarmUtils {
 
-    private val TAG = AlarmUtils::class.java.simpleName
-
     private val mainHandler = Handler(Looper.getMainLooper())
     private val alarmScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -60,7 +57,7 @@ object AlarmUtils {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == "android.media.VOLUME_CHANGED_ACTION") {
                 if (_isAlarmRinging.value) {
-                    Log.d(TAG, "Volume key pressed (detected via broadcast), stopping alarm")
+                    LogUtils.d("Volume key pressed (detected via broadcast), stopping alarm")
                     stopAlarm(isUserDismissed = true)
                 }
             }
@@ -95,7 +92,7 @@ object AlarmUtils {
         if (!_alarmMsgList.value.contains(taskEntity.name)) {
             _alarmMsgList.value = _alarmMsgList.value.add(taskEntity.name)
         }
-        Log.d(TAG, "Starting alarm for task: ${taskEntity.name}")
+        LogUtils.d("Starting alarm for task: ${taskEntity.name}")
         _isAlarmRinging.value = true
         mainHandler.removeCallbacks(snoozeRunnable)
         mainHandler.removeCallbacks(timeoutRunnable)
@@ -122,13 +119,13 @@ object AlarmUtils {
                 isLooping = true
                 prepare()
                 start()
-                Log.d(TAG, "MediaPlayer started with URI: $alarmUri")
+                LogUtils.d("MediaPlayer started with URI: $alarmUri")
             }
 
             // Vibrate
             val vibrator = App.instance.getSystemService(Vibrator::class.java)
             vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 500, 500), 0))
-            Log.d(TAG, "Vibration started")
+            LogUtils.d("Vibration started")
 
             showAlarmNotification()
 
@@ -136,7 +133,7 @@ object AlarmUtils {
             val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
             App.instance.registerReceiver(volumeReceiver, filter)
         } catch (e: Exception) {
-            Log.e(TAG, "Error starting alarm", e)
+            LogUtils.d("Error starting alarm", e)
         }
 
         // Auto stop after 1 minute if no response, then snooze for 5 minutes
@@ -219,7 +216,7 @@ object AlarmUtils {
 
         val manager = App.instance.getSystemService(NotificationManager::class.java)
         manager.notify(ALARM_NOTIFICATION_ID, notification)
-        Log.d(TAG, "Notification posted with ID: $ALARM_NOTIFICATION_ID")
+        LogUtils.d("Notification posted with ID: $ALARM_NOTIFICATION_ID")
     }
 
     fun getRingtoneName(context: Context, alarmRingtone: String?): String {
