@@ -145,20 +145,23 @@ class NotifyEnhService : NotificationListenerService() {
         database = AppDatabase.getDatabase(this)
         appPreferences = AppPreferences(this)
 
-        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
             "NotifyEnh:NotificationProcessing"
         )
     }
 
+    private var lastCleanupTime = 0L
+
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
 
-        // 申请唤醒锁，确保在处理任务期间 CPU 不会休眠
-        wakeLock?.acquire(3000)
+        // 1. 申请极短时间的唤醒锁（500ms），仅确保协程任务能被系统正常调度启动
+        // 缩短时间可显著降低在高频通知下的耗电统计
+        wakeLock?.acquire(500)
 
-        // 1. 过滤常驻通知（如媒体播放、系统常驻服务等）
+        // 2. 过滤常驻通知（如媒体播放、系统常驻服务等）
         if (!sbn.isClearable) {
             return
         }
@@ -207,8 +210,9 @@ class NotifyEnhService : NotificationListenerService() {
                 return@launch
             }
 
-            // 更新缓存并清理
+            // 更新缓存并清理（确保只有一个清理任务在排队）
             notificationCache[cacheKey] = postTime
+            mainHandler.removeCallbacks(cleanNotificationCacheRunnable)
             mainHandler.postDelayed(cleanNotificationCacheRunnable, 5000)
 
             // 4. 存入数据库
@@ -222,8 +226,12 @@ class NotifyEnhService : NotificationListenerService() {
                 )
                 database.notificationDao().insert(entity)
 
-                // 清理数据
-                cleanupOldData()
+                // 只有距离上次尝试清理超过 1 小时，才检查是否需要执行数据清理
+                val now = System.currentTimeMillis()
+                if (now - lastCleanupTime > 3600000) {
+                    lastCleanupTime = now
+                    cleanupOldData()
+                }
             }
 
             // 5. 执行剩余操作 (TTS, 响铃)
