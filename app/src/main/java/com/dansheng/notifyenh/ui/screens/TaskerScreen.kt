@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -276,11 +277,32 @@ fun TaskItem(
                 }
             }
 
-            IconButton(onClick = onMoveUp, enabled = !isFirst) {
-                Icon(Icons.Default.KeyboardArrowUp, contentDescription = null)
-            }
-            IconButton(onClick = onMoveDown, enabled = !isLast) {
-                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                IconButton(
+                    onClick = onMoveUp,
+                    enabled = !isFirst,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowUp,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                IconButton(
+                    onClick = onMoveDown,
+                    enabled = !isLast,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             IconButton(onClick = { onEdit(task) }) {
