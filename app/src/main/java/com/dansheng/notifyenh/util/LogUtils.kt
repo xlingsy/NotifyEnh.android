@@ -23,7 +23,7 @@ object LogUtils {
         logToDb(message, throwable)
     }
 
-    fun logToDb(message: String, throwable: Throwable? = null) {
+    private fun logToDb(message: String, throwable: Throwable? = null) {
         scope.launch(Dispatchers.IO) {
             AppDatabase.getDatabase(App.instance).logDao()
                 .insert(
