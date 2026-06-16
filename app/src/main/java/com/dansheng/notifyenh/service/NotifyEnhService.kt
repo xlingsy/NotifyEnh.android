@@ -9,6 +9,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -84,9 +85,10 @@ class NotifyEnhService : NotificationListenerService() {
         }
     }
 
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var database: AppDatabase
     private lateinit var appPreferences: AppPreferences
+    private var wakeLock: PowerManager.WakeLock? = null
 
     // 内存中的通知查重缓存，Key: pkg|title|content, Value: postTime
     private val notificationCache = ConcurrentHashMap<String, Long>()
@@ -103,7 +105,7 @@ class NotifyEnhService : NotificationListenerService() {
                 AlarmUtils.stopAlarm(isUserDismissed = true)
             }
         }
-        return super.onStartCommand(intent, flags, startId)
+        return START_STICKY
     }
 
     override fun onListenerConnected() {
@@ -142,10 +144,19 @@ class NotifyEnhService : NotificationListenerService() {
         super.onCreate()
         database = AppDatabase.getDatabase(this)
         appPreferences = AppPreferences(this)
+
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "NotifyEnh:NotificationProcessing"
+        )
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
+
+        // 申请唤醒锁，确保在处理任务期间 CPU 不会休眠
+        wakeLock?.acquire(3000)
 
         // 1. 过滤常驻通知（如媒体播放、系统常驻服务等）
         if (!sbn.isClearable) {
@@ -168,14 +179,20 @@ class NotifyEnhService : NotificationListenerService() {
             return
         }
 
+        val notifyDelay = System.currentTimeMillis() - postTime
+        if (notifyDelay > 3000) {
+            LogUtils.d("通知触发延迟${notifyDelay}毫秒,${title}|${content}")
+        }
+
         // 存入数据库及处理任务
         serviceScope.launch {
             // 1. 先匹配任务，获取触发规则
             val triggeredTask = findTriggeredTask(sbn, title, content)
 
+
             // 2. 无论是否重复，如果任务要求取消通知，则立即执行取消
             if (triggeredTask?.actionCancel == true) {
-                LogUtils.d("Action: Cancel notification ${sbn.key}")
+                LogUtils.d("Action: Cancel notification ${title}|${content}")
                 cancelNotification(sbn.key)
                 // 针对部分系统可能存在的延迟，200ms 后再试一次
                 delay(200.milliseconds)
@@ -194,17 +211,19 @@ class NotifyEnhService : NotificationListenerService() {
             mainHandler.postDelayed(cleanNotificationCacheRunnable, 5000)
 
             // 4. 存入数据库
-            val entity = NotificationEntity(
-                packageName = pkg,
-                title = title,
-                content = content,
-                postTime = postTime,
-                triggeredTaskId = triggeredTask?.id
-            )
-            database.notificationDao().insert(entity)
+            launch(Dispatchers.IO) {
+                val entity = NotificationEntity(
+                    packageName = pkg,
+                    title = title,
+                    content = content,
+                    postTime = postTime,
+                    triggeredTaskId = triggeredTask?.id
+                )
+                database.notificationDao().insert(entity)
 
-            // 清理数据
-            cleanupOldData()
+                // 清理数据
+                cleanupOldData()
+            }
 
             // 5. 执行剩余操作 (TTS, 响铃)
             triggeredTask?.let {

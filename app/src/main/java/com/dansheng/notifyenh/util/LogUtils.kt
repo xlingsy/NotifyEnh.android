@@ -15,7 +15,7 @@ object LogUtils {
 
     fun d(message: String, throwable: Throwable? = null) {
         Log.d("NotifyEnh", message, throwable)
-        scope.launch {
+        scope.launch(Dispatchers.IO) {
             AppDatabase.getDatabase(App.instance).logDao()
                 .insert(
                     LogEntity(
