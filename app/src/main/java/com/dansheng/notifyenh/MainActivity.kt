@@ -79,7 +79,7 @@ fun NotifyEnhApp(appPreferences: AppPreferences) {
         try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             packageInfo.longVersionCode.toInt()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             0
         }
     }
@@ -106,17 +106,17 @@ fun NotifyEnhApp(appPreferences: AppPreferences) {
 
     NavigationSuiteScaffold(
         navigationSuiteItems = {
-            destinations.forEach { it ->
-                val targetPage = destinations.indexOf(it)
+            destinations.forEach { destination ->
+                val targetPage = destinations.indexOf(destination)
                 item(
                     icon = {
                         Icon(
-                            painterResource(it.icon),
-                            contentDescription = stringResource(it.label)
+                            painterResource(destination.icon),
+                            contentDescription = stringResource(destination.label)
                         )
                     },
-                    label = { Text(stringResource(it.label)) },
-                    selected = it == currentDestination, // 依然能正确高亮
+                    label = { Text(stringResource(destination.label)) },
+                    selected = destination == currentDestination, // 依然能正确高亮
                     onClick = {
                         // 3. 点击时直接异步触发滚动，不再污染中间状态
                         scope.launch {

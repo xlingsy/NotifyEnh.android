@@ -707,6 +707,7 @@ fun ThemeOptionItem(
 }
 
 // 扩展属性，方便在 SettingsScreen 中使用 clickable
+@Suppress("unused")
 private fun Modifier.clickable(onClick: () -> Unit): Modifier = this.then(
     Modifier.clickable(onClick = onClick)
 )

@@ -86,7 +86,7 @@ fun TaskEditDialog(
                 )
             } else {
                 @Suppress("DEPRECATION")
-                result.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+                result.data?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
             }
             alarmRingtone = uri?.toString()
         }

@@ -62,7 +62,7 @@ fun LogDialog(onDismiss: () -> Unit) {
             isLoading = true
             try {
                 logList = database.logDao().getAllLogs().first()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Handle error
             } finally {
                 isLoading = false

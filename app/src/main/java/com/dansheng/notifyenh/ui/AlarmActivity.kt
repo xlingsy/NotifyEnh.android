@@ -1,7 +1,6 @@
 package com.dansheng.notifyenh.ui
 
 import android.app.KeyguardManager
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -88,7 +87,7 @@ class AlarmActivity : ComponentActivity() {
         setShowWhenLocked(true)
         setTurnScreenOn(true)
 
-        with(getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager) {
+        with(getSystemService(KEYGUARD_SERVICE) as KeyguardManager) {
             requestDismissKeyguard(this@AlarmActivity, null)
         }
     }

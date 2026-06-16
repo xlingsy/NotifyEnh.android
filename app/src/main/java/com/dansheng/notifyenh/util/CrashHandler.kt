@@ -26,7 +26,7 @@ class CrashHandler(private val context: Context) : Thread.UncaughtExceptionHandl
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             }
             context.startActivity(intent)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Fallback if starting activity fails
             defaultHandler?.uncaughtException(thread, throwable)
         } finally {

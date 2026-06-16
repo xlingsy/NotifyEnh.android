@@ -2,7 +2,6 @@ package com.dansheng.notifyenh.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
-import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -57,7 +56,7 @@ class CrashActivity : ComponentActivity() {
     }
 
     private fun copyToClipboard(text: String) {
-        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("Crash Log", text)
         clipboard.setPrimaryClip(clip)
         Toast.makeText(this, getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
