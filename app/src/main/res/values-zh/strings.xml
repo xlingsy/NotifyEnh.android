@@ -114,4 +114,8 @@
     <string name="fg_service_text">监听通知中…</string>
     <string name="fg_channel_name">服务运行通知</string>
     <string name="fg_channel_desc">确保应用在后台稳定运行</string>
+    <string name="app_crashed">应用崩溃</string>
+    <string name="crash_details">详细信息：</string>
+    <string name="copy_to_clipboard">复制到剪贴板</string>
+    <string name="copied_to_clipboard">已复制到剪贴板</string>
 </resources>

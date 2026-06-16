@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import com.dansheng.notifyenh.util.CrashHandler
 
 class App : Application() {
 
@@ -21,8 +22,8 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        CrashHandler(this)
         createNotificationChannel()
-
     }
 
     private fun createNotificationChannel() {

@@ -114,4 +114,8 @@
     <string name="fg_service_text">Listening for notifications…</string>
     <string name="fg_channel_name">Service Running Notification</string>
     <string name="fg_channel_desc">Ensures the app runs stably in the background</string>
+    <string name="app_crashed">App Crashed</string>
+    <string name="crash_details">Crash Details:</string>
+    <string name="copy_to_clipboard">Copy to Clipboard</string>
+    <string name="copied_to_clipboard">Copied to clipboard</string>
 </resources>

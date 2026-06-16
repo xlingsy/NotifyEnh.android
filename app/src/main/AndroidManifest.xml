@@ -48,6 +48,12 @@
             android:excludeFromRecents="true"
             android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".ui.CrashActivity"
+            android:exported="false"
+            android:process=":crash"
+            android:theme="@style/Theme.NotifyEnh" />
+
         <service
             android:name=".service.NotifyEnhService"
             android:exported="true"
