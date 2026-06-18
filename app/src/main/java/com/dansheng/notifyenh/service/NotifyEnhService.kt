@@ -153,9 +153,8 @@ class NotifyEnhService : NotificationListenerService() {
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         super.onNotificationPosted(sbn)
 
-        // 1. 申请极短时间的唤醒锁（500ms），仅确保协程任务能被系统正常调度启动
-        // 缩短时间可显著降低在高频通知下的耗电统计
-        wakeLock?.acquire(500)
+        // 对于响应式通知（如响铃），需要确保应用不被系统在处理过程中挂起
+        wakeLock?.acquire(3000)
 
         // 2. 过滤常驻通知（如媒体播放、系统常驻服务等）
         if (!sbn.isClearable) {
@@ -234,6 +233,7 @@ class NotifyEnhService : NotificationListenerService() {
             triggeredTask?.let {
                 handleRemainingActions(it, title, content)
             }
+
         }
     }
 
