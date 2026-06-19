@@ -134,6 +134,7 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
     val listState = remember { LazyListState() }
     var notificationToTask by remember { mutableStateOf<NotificationEntity?>(null) }
     var menuNotification by remember { mutableStateOf<NotificationEntity?>(null) }
+    var showSnoozeOptions by remember { mutableStateOf(false) }
     var showMoreMenu by remember { mutableStateOf(false) }
     var showClearConfirm by remember { mutableStateOf(false) }
 
@@ -300,7 +301,10 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
 
     if (menuNotification != null) {
         ModalBottomSheet(
-            onDismissRequest = { menuNotification = null },
+            onDismissRequest = {
+                menuNotification = null
+                showSnoozeOptions = false
+            },
             sheetState = sheetState
         ) {
             val notification = menuNotification!!
@@ -310,7 +314,8 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                     .padding(bottom = 24.dp)
             ) {
                 Text(
-                    text = notification.title ?: stringResource(R.string.no_title),
+                    text = if (showSnoozeOptions) stringResource(R.string.view_later) else (notification.title
+                        ?: stringResource(R.string.no_title)),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     maxLines = 1,
@@ -318,63 +323,88 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                 )
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.view_later)) },
-                    leadingContent = {
-                        Icon(
-                            Icons.Default.Notifications,
-                            contentDescription = null
+                if (!showSnoozeOptions) {
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.view_later)) },
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.Notifications,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.combinedClickable(onClick = {
+                            showSnoozeOptions = true
+                        })
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.open_apk)) },
+                        leadingContent = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.combinedClickable(onClick = {
+                            val launchIntent =
+                                context.packageManager.getLaunchIntentForPackage(notification.packageName)
+                            if (launchIntent != null) context.startActivity(launchIntent)
+                            menuNotification = null
+                        })
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.create_task)) },
+                        leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
+                        modifier = Modifier.combinedClickable(onClick = {
+                            notificationToTask = notification
+                            menuNotification = null
+                        })
+                    )
+                    ListItem(
+                        headlineContent = {
+                            Text(
+                                stringResource(R.string.delete_record),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        modifier = Modifier.combinedClickable(onClick = {
+                            scope.launch { database.notificationDao().delete(notification) }
+                            menuNotification = null
+                        })
+                    )
+                } else {
+                    val snoozeOptions = listOf(
+                        R.string.snooze_15m to 15 * 60 * 1000L,
+                        R.string.snooze_1h to 60 * 60 * 1000L,
+                        R.string.snooze_3h to 3 * 60 * 60 * 1000L,
+                        R.string.snooze_12h to 12 * 60 * 60 * 1000L,
+                        R.string.snooze_tomorrow to 24 * 60 * 60 * 1000L
+                    )
+                    snoozeOptions.forEach { (stringRes, duration) ->
+                        ListItem(
+                            headlineContent = { Text(stringResource(stringRes)) },
+                            leadingContent = {
+                                Icon(
+                                    Icons.Default.Notifications,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.combinedClickable(onClick = {
+                                notification.notificationKey?.let { key ->
+                                    NotifyEnhService.snoozeNotification(key, duration)
+                                }
+                                menuNotification = null
+                                showSnoozeOptions = false
+                            })
                         )
-                    },
-                    modifier = Modifier.combinedClickable(onClick = {
-                        notification.notificationKey?.let { key ->
-                            NotifyEnhService.snoozeNotification(key, 3600000)
-                        }
-                        menuNotification = null
-                    })
-                )
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.open_apk)) },
-                    leadingContent = {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = null
-                        )
-                    },
-                    modifier = Modifier.combinedClickable(onClick = {
-                        val launchIntent =
-                            context.packageManager.getLaunchIntentForPackage(notification.packageName)
-                        if (launchIntent != null) context.startActivity(launchIntent)
-                        menuNotification = null
-                    })
-                )
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.create_task)) },
-                    leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
-                    modifier = Modifier.combinedClickable(onClick = {
-                        notificationToTask = notification
-                        menuNotification = null
-                    })
-                )
-                ListItem(
-                    headlineContent = {
-                        Text(
-                            stringResource(R.string.delete_record),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    },
-                    leadingContent = {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    },
-                    modifier = Modifier.combinedClickable(onClick = {
-                        scope.launch { database.notificationDao().delete(notification) }
-                        menuNotification = null
-                    })
-                )
+                    }
+                }
             }
         }
     }

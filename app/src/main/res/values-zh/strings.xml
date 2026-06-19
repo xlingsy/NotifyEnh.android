@@ -22,6 +22,11 @@
     <string name="create_task">创建任务</string>
     <string name="delete_record">删除记录</string>
     <string name="view_later">稍后查看</string>
+    <string name="snooze_15m">15 分钟</string>
+    <string name="snooze_1h">1 小时</string>
+    <string name="snooze_3h">3 小时</string>
+    <string name="snooze_12h">12 小时</string>
+    <string name="snooze_tomorrow">明天</string>
     <string name="no_title">无标题</string>
     <string name="no_content">无内容</string>
 

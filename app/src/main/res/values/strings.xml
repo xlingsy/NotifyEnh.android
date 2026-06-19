@@ -22,6 +22,11 @@
     <string name="create_task">Create task</string>
     <string name="delete_record">Delete record</string>
     <string name="view_later">View Later</string>
+    <string name="snooze_15m">15 Minutes</string>
+    <string name="snooze_1h">1 Hour</string>
+    <string name="snooze_3h">3 Hours</string>
+    <string name="snooze_12h">12 Hours</string>
+    <string name="snooze_tomorrow">Tomorrow</string>
     <string name="no_title">No Title</string>
     <string name="no_content">No Content</string>
 
