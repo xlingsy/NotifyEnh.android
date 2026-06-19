@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -313,14 +314,32 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                     .fillMaxWidth()
                     .padding(bottom = 24.dp)
             ) {
-                Text(
-                    text = if (showSnoozeOptions) stringResource(R.string.view_later) else (notification.title
-                        ?: stringResource(R.string.no_title)),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = if (showSnoozeOptions) stringResource(R.string.view_later) else (notification.title
+                            ?: stringResource(R.string.no_title)),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 8.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (showSnoozeOptions) {
+                        IconButton(onClick = { showSnoozeOptions = false }) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back)
+                            )
+                        }
+                    }
+                }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 if (!showSnoozeOptions) {

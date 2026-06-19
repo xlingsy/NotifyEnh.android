@@ -17,6 +17,7 @@
     <string name="confirm_clear_message">Are you sure you want to clear all notification records? This action cannot be undone.</string>
     <string name="confirm">Confirm</string>
     <string name="cancel">Cancel</string>
+    <string name="back">Back</string>
     <string name="task_triggered">Task triggered</string>
     <string name="open_apk">Open apk</string>
     <string name="create_task">Create task</string>
