@@ -1,5 +1,6 @@
 package com.dansheng.notifyenh.service
 
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
@@ -242,6 +243,13 @@ class NotifyEnhService : NotificationListenerService() {
         title: String,
         content: String
     ) {
+        // 检查免打扰模式 (DND)，如果开启则不执行 TTS 和 响铃
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (notificationManager.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL) {
+            LogUtils.d("免打扰开启中, 跳过 TTS/Alarm for: $title")
+            return
+        }
+
         if (task.actionTts) {
             val speechText = if (title.isNotBlank()) "$title: $content" else content
             TTS.speak(speechText)
