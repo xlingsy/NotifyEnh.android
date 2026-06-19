@@ -218,6 +218,7 @@ class NotifyEnhService : NotificationListenerService() {
                     title = title,
                     content = content,
                     postTime = postTime,
+                    notificationKey = sbn.key,
                     triggeredTaskId = triggeredTask?.id
                 )
                 database.notificationDao().insert(entity)

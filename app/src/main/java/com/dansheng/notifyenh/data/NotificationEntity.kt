@@ -10,5 +10,6 @@ data class NotificationEntity(
     val title: String?,
     val content: String?,
     val postTime: Long,
+    val notificationKey: String? = null,
     val triggeredTaskId: Long? = null // 新增：触发的任务 ID（非空表示触发了任务）
 )
