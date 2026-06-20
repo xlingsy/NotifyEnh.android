@@ -83,6 +83,15 @@ class NotifyEnhService : NotificationListenerService() {
             LogUtils.d("Attempted to hard reconnect NotificationListenerService")
         }
 
+        fun clearAllNotifications() {
+            try {
+                instance?.cancelAllNotifications()
+                LogUtils.d("Cleared all notifications")
+            } catch (e: Exception) {
+                LogUtils.e("Failed to clear all notifications", e)
+            }
+        }
+
         fun snoozeNotification(key: String, durationMs: Long) {
             try {
                 instance?.snoozeNotification(key, durationMs)

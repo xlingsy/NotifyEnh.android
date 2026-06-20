@@ -174,6 +174,9 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                 shape = RoundedCornerShape(12.dp)
             )
 
+            /**
+             * 菜单
+             */
             Box {
                 IconButton(onClick = { showMoreMenu = true }) {
                     Icon(
@@ -186,7 +189,15 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                     onDismissRequest = { showMoreMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.clear_all_records)) },
+                        text = { Text(stringResource(R.string.clear_all_notifications)) },
+                        onClick = {
+                            showMoreMenu = false
+                            NotifyEnhService.clearAllNotifications()
+                        },
+                        leadingIcon = { Icon(Icons.Default.Clear, contentDescription = null) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.delete_all_records)) },
                         onClick = {
                             showMoreMenu = false
                             showClearConfirm = true

@@ -10,7 +10,8 @@
     <string name="search_placeholder">Search title, content or app</string>
     <string name="clear">Clear</string>
     <string name="more_options">More options</string>
-    <string name="clear_all_records">Clear all records</string>
+    <string name="clear_all_notifications">Clear all notifications</string>
+    <string name="delete_all_records">Delete all records</string>
     <string name="no_notifications">No notification records</string>
     <string name="no_matching_notifications">No matching notifications found</string>
     <string name="confirm_clear_title">Confirm Clear</string>

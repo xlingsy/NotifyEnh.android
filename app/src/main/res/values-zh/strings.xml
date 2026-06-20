@@ -10,7 +10,8 @@
     <string name="search_placeholder">搜索通知标题、内容或应用</string>
     <string name="clear">清除</string>
     <string name="more_options">更多选项</string>
-    <string name="clear_all_records">清除所有记录</string>
+    <string name="clear_all_notifications">清除所有通知</string>
+    <string name="delete_all_records">删除所有记录</string>
     <string name="no_notifications">暂无通知记录</string>
     <string name="no_matching_notifications">未找到相关通知</string>
     <string name="confirm_clear_title">确认清除</string>
