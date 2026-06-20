@@ -79,7 +79,7 @@ fun LogDialog(onDismiss: () -> Unit) {
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(vertical = 32.dp, horizontal = 16.dp),
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),

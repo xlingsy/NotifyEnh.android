@@ -1,6 +1,7 @@
 package com.dansheng.notifyenh.ui.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -20,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.dansheng.notifyenh.R
 import dev.jeziellago.compose.markdowntext.MarkdownText
 import java.io.BufferedReader
@@ -44,6 +46,10 @@ fun ChangelogDialog(
     }
 
     AlertDialog(
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         onDismissRequest = onDismiss,
         title = {
             Text(
