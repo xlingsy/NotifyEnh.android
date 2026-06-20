@@ -131,7 +131,7 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
         }
     }.collectAsLazyPagingItems()
 
-    // 使用 remember 而非 rememberLazyListState (默认用 rememberSaveable)
+    // 使用 remember 而非 rememberLazyListState (默认用 rememberSaveAble)
     // 这样应用关闭重新打开时，滚动位置会自动重置到顶端
     val listState = remember { LazyListState() }
     val showBackToTop by remember {
