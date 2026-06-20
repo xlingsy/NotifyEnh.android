@@ -19,6 +19,7 @@
     <string name="confirm">确定</string>
     <string name="cancel">取消</string>
     <string name="back">返回</string>
+    <string name="back_to_top">回到顶部</string>
     <string name="task_triggered">已触发任务</string>
     <string name="open_apk">打开应用</string>
     <string name="create_task">创建任务</string>

@@ -19,6 +19,7 @@
     <string name="confirm">Confirm</string>
     <string name="cancel">Cancel</string>
     <string name="back">Back</string>
+    <string name="back_to_top">Back to top</string>
     <string name="task_triggered">Task triggered</string>
     <string name="open_apk">Open apk</string>
     <string name="create_task">Create task</string>

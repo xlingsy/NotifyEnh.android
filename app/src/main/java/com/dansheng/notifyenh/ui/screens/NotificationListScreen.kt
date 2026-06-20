@@ -1,5 +1,8 @@
 package com.dansheng.notifyenh.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +24,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
@@ -30,6 +34,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -128,6 +134,11 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
     // 使用 remember 而非 rememberLazyListState (默认用 rememberSaveable)
     // 这样应用关闭重新打开时，滚动位置会自动重置到顶端
     val listState = remember { LazyListState() }
+    val showBackToTop by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 2
+        }
+    }
     var notificationToTask by remember { mutableStateOf<NotificationEntity?>(null) }
     var menuNotification by remember { mutableStateOf<NotificationEntity?>(null) }
     var showSnoozeOptions by remember { mutableStateOf(false) }
@@ -282,6 +293,31 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                     state = listState,
                     modifier = Modifier.align(Alignment.CenterEnd)
                 )
+
+                this@Column.AnimatedVisibility(
+                    visible = showBackToTop,
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                ) {
+                    FloatingActionButton(
+                        onClick = {
+                            scope.launch {
+                                listState.scrollToItem(0)
+                            }
+                        },
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.KeyboardArrowUp,
+                            contentDescription = stringResource(R.string.back_to_top)
+                        )
+                    }
+                }
             }
         }
     }
