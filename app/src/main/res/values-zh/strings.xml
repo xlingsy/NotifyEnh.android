@@ -32,6 +32,7 @@
     <string name="snooze_3h">3 小时</string>
     <string name="snooze_12h">12 小时</string>
     <string name="snooze_tomorrow">明天</string>
+    <string name="clear_unpinned_notifications">清除未固定的通知</string>
     <string name="no_title">无标题</string>
     <string name="no_content">无内容</string>
 

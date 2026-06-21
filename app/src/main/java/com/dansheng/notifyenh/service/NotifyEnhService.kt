@@ -127,6 +127,25 @@ class NotifyEnhService : NotificationListenerService() {
             }
         }
 
+        /**
+         * 清除系统通知栏中所有未固定的通知（跳过 isPinned=true 的记录）
+         * @param pinnedKeys DB 中标记为固定的通知 key 集合
+         */
+        fun clearNotificationsExceptPinned(pinnedKeys: Set<String>) {
+            val svc = instance ?: return
+            val active = svc.activeNotifications ?: return
+            for (sbn in active) {
+                if (sbn.key !in pinnedKeys) {
+                    try {
+                        svc.cancelNotification(sbn.key)
+                    } catch (e: Exception) {
+                        LogUtils.e("Failed to cancel notification ${sbn.key}", e)
+                    }
+                }
+            }
+            LogUtils.d("Cleared notifications except pinned")
+        }
+
         fun snoozeNotification(key: String, durationMs: Long) {
             try {
                 instance?.snoozeNotification(key, durationMs)

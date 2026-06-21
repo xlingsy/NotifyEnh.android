@@ -25,6 +25,9 @@ interface NotificationDao {
     @Query("UPDATE notifications SET isPinned = :pinned WHERE id = :id")
     suspend fun updatePinned(id: Long, pinned: Boolean)
 
+    @Query("SELECT notificationKey FROM notifications WHERE isPinned = 1 AND notificationKey IS NOT NULL")
+    suspend fun getPinnedNotificationKeys(): List<String>
+
     @Query("DELETE FROM notifications WHERE postTime < :timestamp")
     suspend fun deleteOldNotifications(timestamp: Long)
 

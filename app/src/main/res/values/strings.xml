@@ -32,6 +32,7 @@
     <string name="snooze_3h">3 Hours</string>
     <string name="snooze_12h">12 Hours</string>
     <string name="snooze_tomorrow">Tomorrow</string>
+    <string name="clear_unpinned_notifications">Clear all unpinned notifications</string>
     <string name="no_title">No Title</string>
     <string name="no_content">No Content</string>
 

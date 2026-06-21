@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -30,6 +31,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,12 +53,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
@@ -64,6 +72,11 @@ import androidx.paging.PagingData
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.insertSeparators
 import androidx.paging.map
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
+import androidx.compose.foundation.Image
+import androidx.compose.ui.draw.clip
 import com.dansheng.notifyenh.R
 import com.dansheng.notifyenh.data.AppDatabase
 import com.dansheng.notifyenh.data.NotificationEntity
@@ -137,7 +150,8 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
 
     val sheetState = rememberModalBottomSheetState()
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -293,6 +307,27 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                     modifier = Modifier.align(Alignment.CenterEnd)
                 )
             }
+        }
+    }
+
+        // FAB: 清除系统通知（跳过 PIN 标记的通知）
+        FloatingActionButton(
+            onClick = {
+                scope.launch {
+                    val pinnedKeys = database.notificationDao()
+                        .getPinnedNotificationKeys()
+                        .toSet()
+                    NotifyEnhService.clearNotificationsExceptPinned(pinnedKeys)
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(
+                Icons.Default.Clear,
+                contentDescription = stringResource(R.string.clear_unpinned_notifications)
+            )
         }
     }
 
@@ -562,8 +597,22 @@ fun NotificationItem(
     onPinToggle: (NotificationEntity) -> Unit,
     onLongClick: (NotificationEntity) -> Unit
 ) {
+    val context = LocalContext.current
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     val timeString = timeFormat.format(Date(notification.postTime))
+
+    // 加载应用名称和图标
+    val appInfo = remember(notification.packageName) {
+        try {
+            val pm = context.packageManager
+            val appInfo = pm.getApplicationInfo(notification.packageName, 0)
+            val name = pm.getApplicationLabel(appInfo).toString()
+            val icon = pm.getApplicationIcon(notification.packageName).toImageBitmap()
+            AppInfo(name, icon)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -578,10 +627,32 @@ fun NotificationItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // 应用图标
+                if (appInfo != null) {
+                    Image(
+                        painter = BitmapPainter(appInfo.icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                    )
+                    Spacer(modifier = Modifier.size(6.dp))
+                }
                 Text(
-                    text = notification.packageName,
+                    text = buildAnnotatedString {
+                        val displayName = appInfo?.name ?: notification.packageName
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
+                            append(displayName)
+                        }
+                        if (appInfo != null) {
+                            withStyle(SpanStyle(color = MaterialTheme.colorScheme.outline)) {
+                                append("  ${notification.packageName}")
+                            }
+                        }
+                    },
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
                 // PIN 指示器（仅固定状态显示，红色）
@@ -615,6 +686,7 @@ fun NotificationItem(
                     color = MaterialTheme.colorScheme.secondary
                 )
             }
+
             Text(
                 text = notification.title ?: stringResource(R.string.no_title),
                 style = MaterialTheme.typography.titleMedium,
@@ -627,6 +699,27 @@ fun NotificationItem(
         }
     }
 }
+
+/**
+ * 将 Android Drawable 转换为 Compose ImageBitmap
+ */
+private fun Drawable.toImageBitmap(): ImageBitmap {
+    if (this is BitmapDrawable && bitmap != null) {
+        return bitmap.asImageBitmap()
+    }
+    val width = maxOf(intrinsicWidth, 1)
+    val height = maxOf(intrinsicHeight, 1)
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val canvas = android.graphics.Canvas(bitmap)
+    setBounds(0, 0, width, height)
+    draw(canvas)
+    return bitmap.asImageBitmap()
+}
+
+/**
+ * 应用信息（名称 + 图标）
+ */
+private data class AppInfo(val name: String, val icon: ImageBitmap)
 
 sealed class NotificationUiModel {
     data class Item(val notification: NotificationEntity) : NotificationUiModel()
