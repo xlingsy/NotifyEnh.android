@@ -11,5 +11,6 @@ data class NotificationEntity(
     val content: String?,
     val postTime: Long,
     val notificationKey: String? = null,
-    val triggeredTaskId: Long? = null // 新增：触发的任务 ID（非空表示触发了任务）
+    val triggeredTaskId: Long? = null, // 触发的任务 ID（非空表示触发了任务）
+    val isPinned: Boolean = false // 是否被用户固定（大头针标记）
 )

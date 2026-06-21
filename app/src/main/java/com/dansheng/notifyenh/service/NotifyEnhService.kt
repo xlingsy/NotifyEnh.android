@@ -92,6 +92,41 @@ class NotifyEnhService : NotificationListenerService() {
             }
         }
 
+        /**
+         * 尝试发送通知原始的 contentIntent（精准深链跳转）。
+         * 仅当通知仍处于 activeNotifications 中时才有效。
+         * @return true 表示成功发送 contentIntent，false 表示需要 fallback
+         */
+        /**
+         * 从系统通知列表中移除指定通知
+         * @return true 表示成功取消，false 表示通知已不在活跃列表中
+         */
+        fun cancelNotificationByKey(key: String): Boolean {
+            return try {
+                instance?.cancelNotification(key)
+                true
+            } catch (e: Exception) {
+                LogUtils.e("Failed to cancel notification $key", e)
+                false
+            }
+        }
+
+        /**
+         * 尝试发送通知原始的 contentIntent（精准深链跳转）。
+         * 仅当通知仍处于 activeNotifications 中时才有效。
+         * @return true 表示成功发送 contentIntent，false 表示需要 fallback
+         */
+        fun openNotificationByKey(key: String): Boolean {
+            val sbn = instance?.activeNotifications?.find { it.key == key } ?: return false
+            return try {
+                sbn.notification.contentIntent?.send()
+                true
+            } catch (e: Exception) {
+                LogUtils.e("Failed to send contentIntent for $key", e)
+                false
+            }
+        }
+
         fun snoozeNotification(key: String, durationMs: Long) {
             try {
                 instance?.snoozeNotification(key, durationMs)

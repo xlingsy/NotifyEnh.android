@@ -22,6 +22,9 @@ interface NotificationDao {
     @Query("SELECT * FROM notifications WHERE title LIKE '%' || :searchQuery || '%' OR content LIKE '%' || :searchQuery || '%' OR packageName LIKE '%' || :searchQuery || '%' ORDER BY postTime DESC")
     fun searchNotificationsPaging(searchQuery: String): androidx.paging.PagingSource<Int, NotificationEntity>
 
+    @Query("UPDATE notifications SET isPinned = :pinned WHERE id = :id")
+    suspend fun updatePinned(id: Long, pinned: Boolean)
+
     @Query("DELETE FROM notifications WHERE postTime < :timestamp")
     suspend fun deleteOldNotifications(timestamp: Long)
 

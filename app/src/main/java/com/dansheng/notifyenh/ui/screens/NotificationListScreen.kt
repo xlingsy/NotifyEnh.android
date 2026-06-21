@@ -51,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -246,6 +247,15 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                                     if (actualItem != null) {
                                         NotificationItem(
                                             notification = actualItem.notification,
+                                            onPinToggle = {
+                                                scope.launch {
+                                                    database.notificationDao()
+                                                        .updatePinned(
+                                                            it.id,
+                                                            !it.isPinned
+                                                        )
+                                                }
+                                            },
                                             onLongClick = {
                                                 menuNotification = it
                                             }
@@ -350,9 +360,44 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                             )
                         },
                         modifier = Modifier.combinedClickable(onClick = {
-                            val launchIntent =
-                                context.packageManager.getLaunchIntentForPackage(notification.packageName)
-                            if (launchIntent != null) context.startActivity(launchIntent)
+                            // 优先尝试原始通知的 contentIntent（精准深链跳转）
+                            val opened = notification.notificationKey?.let { key ->
+                                NotifyEnhService.openNotificationByKey(key)
+                            } ?: false
+                            if (!opened) {
+                                // fallback: 打开发通知应用的首页
+                                val launchIntent =
+                                    context.packageManager.getLaunchIntentForPackage(notification.packageName)
+                                if (launchIntent != null) {
+                                    try {
+                                        context.startActivity(launchIntent)
+                                    } catch (_: Exception) {
+                                        // 某些应用可能没有 LAUNCHER Activity
+                                    }
+                                }
+                            }
+                            menuNotification = null
+                        })
+                    )
+                    ListItem(
+                        headlineContent = {
+                            Text(
+                                if (notification.isPinned) stringResource(R.string.unpin)
+                                else stringResource(R.string.pin)
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_pin),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        modifier = Modifier.combinedClickable(onClick = {
+                            scope.launch {
+                                database.notificationDao()
+                                    .updatePinned(notification.id, !notification.isPinned)
+                            }
                             menuNotification = null
                         })
                     )
@@ -361,6 +406,21 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                         leadingContent = { Icon(Icons.Default.Add, contentDescription = null) },
                         modifier = Modifier.combinedClickable(onClick = {
                             notificationToTask = notification
+                            menuNotification = null
+                        })
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.dismiss_notification)) },
+                        leadingContent = {
+                            Icon(
+                                Icons.Default.Clear,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.combinedClickable(onClick = {
+                            notification.notificationKey?.let { key ->
+                                NotifyEnhService.cancelNotificationByKey(key)
+                            }
                             menuNotification = null
                         })
                     )
@@ -379,7 +439,13 @@ fun NotificationListScreen(modifier: Modifier = Modifier) {
                             )
                         },
                         modifier = Modifier.combinedClickable(onClick = {
-                            scope.launch { database.notificationDao().delete(notification) }
+                            scope.launch {
+                                // 同时从系统通知栏移除（如果仍活跃）
+                                notification.notificationKey?.let { key ->
+                                    NotifyEnhService.cancelNotificationByKey(key)
+                                }
+                                database.notificationDao().delete(notification)
+                            }
                             menuNotification = null
                         })
                     )
@@ -493,6 +559,7 @@ fun DateHeader(date: String) {
 @Composable
 fun NotificationItem(
     notification: NotificationEntity,
+    onPinToggle: (NotificationEntity) -> Unit,
     onLongClick: (NotificationEntity) -> Unit
 ) {
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
@@ -517,6 +584,21 @@ fun NotificationItem(
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.weight(1f)
                 )
+                // PIN 指示器（仅固定状态显示，红色）
+                if (notification.isPinned) {
+                    IconButton(
+                        onClick = { onPinToggle(notification) },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_pin),
+                            contentDescription = stringResource(R.string.unpin),
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                // 触发标记
                 if (notification.triggeredTaskId != null) {
                     Icon(
                         imageVector = Icons.Default.Check,
